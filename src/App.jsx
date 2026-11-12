@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MissionHeader from './components/MissionHeader';
 import CrewSelector from './components/CrewSelector';
 import BiometricsTab from './components/BiometricsTab';
@@ -8,23 +8,66 @@ import DrBekurAITab from './components/DrBekurAITab';
 import CommsScienceTab from './components/CommsScienceTab';
 import SquadronCockpitDeck from './components/SquadronCockpitDeck';
 import BiometricLoginGate from './components/BiometricLoginGate';
+import GenomicDnaRadiationSuite from './components/GenomicDnaRadiationSuite';
+import AcousticVoiceTriageSuite from './components/AcousticVoiceTriageSuite';
 import DataIntegrationModal from './components/DataIntegrationModal';
 import AIDoctorModal from './components/AIDoctorModal';
 import NasaRiskDrawer from './components/NasaRiskDrawer';
 import { CREW_MEMBERS } from './data/nasaHealthData';
-import { ShieldAlert, Activity, Heart, Bot, Radio, Cpu, Sparkles, Tv, Lock, LogOut, UserCheck, Shield } from 'lucide-react';
+import {
+  ShieldAlert,
+  Activity,
+  Heart,
+  Bot,
+  Radio,
+  Cpu,
+  Sparkles,
+  Tv,
+  Lock,
+  LogOut,
+  UserCheck,
+  Shield,
+  Dna,
+  Mic,
+} from 'lucide-react';
 import { cockpitAudio } from './utils/audioAlert';
 
 export default function App() {
   const [crew, setCrew] = useState(CREW_MEMBERS);
   const [activeCrewId, setActiveCrewId] = useState('crew-02'); // Abebe Worku
-  const [operationalMode, setOperationalMode] = useState('cockpit-deck'); // 'cockpit-deck' | 'crew-quarters'
   const [authenticatedCrewId, setAuthenticatedCrewId] = useState('crew-02'); // Abebe Worku default authenticated
-  const [activeTab, setActiveTab] = useState('biometrics'); // 'biometrics' | 'cardiac' | 'digital-twin' | 'ai-doctor' | 'comms-science'
+  const [activeQuarterTab, setActiveQuarterTab] = useState('biometrics'); // 'biometrics' | 'cardiac' | 'digital-twin' | 'ai-doctor' | 'comms-science'
   const [isAnomalyActive, setIsAnomalyActive] = useState(false);
   const [isAIDocOpen, setIsAIDocOpen] = useState(false);
   const [isNasaRiskOpen, setIsNasaRiskOpen] = useState(false);
   const [isDataIntegrationOpen, setIsDataIntegrationOpen] = useState(false);
+
+  // Hash-based Full Page Router (#/cockpit, #/quarters, #/genomics, #/voice-triage, #/ai-doctor, #/comms-science, #/login)
+  const getInitialPage = () => {
+    const hash = window.location.hash.replace('#/', '');
+    const validPages = ['cockpit', 'quarters', 'genomics', 'voice-triage', 'ai-doctor', 'comms-science', 'login'];
+    return validPages.includes(hash) ? hash : 'cockpit';
+  };
+
+  const [currentPage, setCurrentPage] = useState(getInitialPage);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#/', '');
+      const validPages = ['cockpit', 'quarters', 'genomics', 'voice-triage', 'ai-doctor', 'comms-science', 'login'];
+      if (validPages.includes(hash)) {
+        setCurrentPage(hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const navigateTo = (pageId) => {
+    window.location.hash = `#/${pageId}`;
+    setCurrentPage(pageId);
+    cockpitAudio.playBlip();
+  };
 
   const activeCrew = crew.find((c) => c.id === activeCrewId) || crew[0];
   const authenticatedCrew = crew.find((c) => c.id === authenticatedCrewId);
@@ -33,28 +76,18 @@ export default function App() {
     setIsAnomalyActive((prev) => !prev);
   };
 
-  // Dynamically feed live Bluetooth sensor data or NASA dataset into active astronaut!
-  const handleApplyCustomTelemetry = (customData) => {
-    setCrew((prevCrew) =>
-      prevCrew.map((c) => {
-        if (c.id === activeCrewId) {
-          return {
-            ...c,
-            vitals: {
-              ...c.vitals,
-              heartRate: customData.bpm || c.vitals.heartRate,
-              bpm: customData.bpm || c.vitals.bpm,
-              spo2: customData.spo2 || c.vitals.spo2,
-            },
-            sansScore: customData.sans !== undefined ? customData.sans : c.sansScore,
-          };
-        }
-        return c;
-      })
-    );
-  };
+  // Navigation Pages Definition
+  const NAV_PAGES = [
+    { id: 'cockpit', label: 'Squadron Cockpit Deck', icon: Tv, badge: 'Shared Bridge' },
+    { id: 'quarters', label: 'Private Crew Quarters', icon: Lock, badge: 'In-Vivo Suite' },
+    { id: 'genomics', label: 'Genomic DNA Radiation', icon: Dna, badge: 'NASA GeneLab' },
+    { id: 'voice-triage', label: 'Voice Stress Analyzer', icon: Mic, badge: 'Acoustic FFT' },
+    { id: 'ai-doctor', label: 'Dr. BEKUR-AI Clinic', icon: Bot, badge: '96.4% Accuracy' },
+    { id: 'comms-science', label: 'DSN Comms & Science', icon: Radio, badge: 'Deep Space' },
+  ];
 
-  const tabs = [
+  // Sub-tabs inside Crew Quarters
+  const quarterTabs = [
     { id: 'biometrics', label: '3D In-Vivo Biometrics', icon: Activity, badge: 'Gender Adaptive' },
     { id: 'cardiac', label: 'Lead-II Cardiac Vector', icon: Heart, badge: '25mm/s Sweep' },
     { id: 'digital-twin', label: '72h Digital Twin Lab', icon: Cpu, badge: 'Prognostic Novelty' },
@@ -69,8 +102,8 @@ export default function App() {
         <MissionHeader
           onTriggerAnomaly={handleToggleAnomaly}
           isAnomalyActive={isAnomalyActive}
-          onOpenAIDoc={() => setActiveTab('ai-doctor')}
-          onOpenNasaEvidence={() => setActiveTab('comms-science')}
+          onOpenAIDoc={() => navigateTo('ai-doctor')}
+          onOpenNasaEvidence={() => navigateTo('comms-science')}
           onOpenDataIntegration={() => setIsDataIntegrationOpen(true)}
         />
 
@@ -89,10 +122,7 @@ export default function App() {
               </div>
             </div>
             <button
-              onClick={() => {
-                setActiveTab('ai-doctor');
-                cockpitAudio.playBlip();
-              }}
+              onClick={() => navigateTo('ai-doctor')}
               className="px-4 py-2 bg-hud-rose hover:bg-hud-rose/80 text-white font-mono font-bold text-xs rounded-xl uppercase tracking-wider shrink-0 transition shadow-lg shadow-hud-rose/40"
             >
               LAUNCH DR. BEKUR-AI TRIAGE
@@ -100,69 +130,55 @@ export default function App() {
           </div>
         )}
 
-        {/* MASTER OPERATIONAL ARCHITECTURE SWITCH (NASA DUAL-DISPLAY PARADIGM) */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-2 rounded-2xl bg-space-950/90 border border-hud-cyan/40 shadow-2xl backdrop-blur-xl gap-2 font-mono">
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-space-900 border border-slate-800">
-            <button
-              onClick={() => {
-                setOperationalMode('cockpit-deck');
-                cockpitAudio.playBlip();
-              }}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-orbitron text-xs font-bold transition ${
-                operationalMode === 'cockpit-deck'
-                  ? 'bg-hud-cyan text-space-950 shadow-md shadow-hud-cyan/30'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Tv className="w-4 h-4" />
-              <span>🖥️ SHARED COCKPIT DECK</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setOperationalMode('crew-quarters');
-                cockpitAudio.playBlip();
-              }}
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-lg font-orbitron text-xs font-bold transition ${
-                operationalMode === 'crew-quarters'
-                  ? 'bg-hud-cyan text-space-950 shadow-md shadow-hud-cyan/30'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Lock className="w-4 h-4" />
-              <span>🔒 CREW QUARTERS (PRIVATE)</span>
-            </button>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 px-3 py-1.5 rounded-xl bg-space-900/60 border border-slate-800 text-[11px] text-slate-400">
-            <Shield className="w-3.5 h-3.5 text-hud-emerald" />
-            <span>NASA 14 CFR § 1213 Astronaut Medical Privacy Standard</span>
-          </div>
+        {/* TOP-LEVEL ENTERPRISE NAVIGATION HUB (Multi-Page Aerospace Navigation) */}
+        <div className="p-1.5 rounded-2xl bg-space-900/90 border border-hud-cyan/30 shadow-2xl backdrop-blur-xl flex items-center gap-1.5 overflow-x-auto font-mono">
+          {NAV_PAGES.map((page) => {
+            const Icon = page.icon;
+            const isCurrent = currentPage === page.id;
+            return (
+              <button
+                key={page.id}
+                onClick={() => navigateTo(page.id)}
+                className={`flex-1 min-w-[170px] flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-orbitron text-xs font-bold tracking-wider transition-all ${
+                  isCurrent
+                    ? 'bg-hud-cyan text-space-950 shadow-lg shadow-hud-cyan/30 scale-[1.01]'
+                    : 'text-slate-400 hover:text-white hover:bg-space-800/60'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isCurrent ? 'text-space-950' : 'text-hud-cyan'}`} />
+                <span className="truncate">{page.label}</span>
+                <span
+                  className={`text-[8px] font-mono px-1.5 py-0.5 rounded uppercase hidden xl:inline-block ${
+                    isCurrent ? 'bg-space-950/20 text-space-950' : 'bg-space-950 text-slate-400 border border-slate-800'
+                  }`}
+                >
+                  {page.badge}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* VIEW 1: COCKPIT BULKHEAD / SQUADRON HUD (PUBLIC COMMAND DECK) */}
-        {operationalMode === 'cockpit-deck' && (
+        {/* ================= PAGE ROUTING VIEWPORTS ================= */}
+
+        {/* 1. COCKPIT BRIDGE DISPLAY PAGE (Shared 4-Crew Wall Screen) */}
+        {currentPage === 'cockpit' && (
           <SquadronCockpitDeck
             crew={crew}
             activeCrewId={activeCrewId}
             onSelectCrew={(id) => {
               setActiveCrewId(id);
               setAuthenticatedCrewId(id);
-              setOperationalMode('crew-quarters');
-              setActiveTab('biometrics');
+              navigateTo('quarters');
             }}
-            onOpenSoloConsole={() => {
-              setOperationalMode('crew-quarters');
-              setActiveTab('biometrics');
-            }}
+            onOpenSoloConsole={() => navigateTo('quarters')}
             isEmergencyActive={isAnomalyActive}
           />
         )}
 
-        {/* VIEW 2: CREW QUARTERS (PRIVATE MEDICAL SUITE) */}
-        {operationalMode === 'crew-quarters' && (
+        {/* 2. CREW QUARTERS PRIVATE SUITE PAGE (NASA 14 CFR § 1213 Enclave) */}
+        {currentPage === 'quarters' && (
           <>
-            {/* If Not Authenticated: Show NASA Biometric Gate */}
             {!authenticatedCrewId ? (
               <BiometricLoginGate
                 crew={crew}
@@ -172,7 +188,6 @@ export default function App() {
                 }}
               />
             ) : (
-              /* Authenticated Astronaut Private Enclave */
               <div className="space-y-6">
                 {/* Confidential Astronaut Session Banner */}
                 <div className="p-3 sm:p-4 rounded-2xl bg-space-900/90 border border-hud-cyan/40 backdrop-blur-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-mono shadow-xl">
@@ -197,10 +212,7 @@ export default function App() {
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => {
-                        cockpitAudio.playBlip();
-                        setOperationalMode('cockpit-deck');
-                      }}
+                      onClick={() => navigateTo('cockpit')}
                       className="px-3 py-1.5 rounded-xl bg-space-950 border border-slate-700 text-slate-300 hover:text-white text-xs font-mono transition flex items-center gap-1.5"
                     >
                       <Tv className="w-3.5 h-3.5 text-hud-cyan" />
@@ -210,6 +222,7 @@ export default function App() {
                       onClick={() => {
                         cockpitAudio.playBlip();
                         setAuthenticatedCrewId(null);
+                        navigateTo('login');
                       }}
                       className="px-3 py-1.5 rounded-xl bg-hud-rose/20 border border-hud-rose/50 text-hud-rose hover:bg-hud-rose/30 text-xs font-mono font-bold transition flex items-center gap-1.5"
                     >
@@ -230,16 +243,16 @@ export default function App() {
                   isAnomalyActive={isAnomalyActive}
                 />
 
-                {/* Spacious, Sleek Tab Navigation Bar (SpaceX / Apple Glassmorphism) */}
+                {/* Sub-Tabs Bar inside Private Quarters */}
                 <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-space-900/90 border border-hud-cyan/25 backdrop-blur-md overflow-x-auto shadow-xl">
-                  {tabs.map((tab) => {
+                  {quarterTabs.map((tab) => {
                     const Icon = tab.icon;
-                    const isActive = activeTab === tab.id;
+                    const isActive = activeQuarterTab === tab.id;
                     return (
                       <button
                         key={tab.id}
                         onClick={() => {
-                          setActiveTab(tab.id);
+                          setActiveQuarterTab(tab.id);
                           cockpitAudio.playBlip();
                         }}
                         className={`flex-1 min-w-[190px] flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl font-orbitron text-xs font-bold tracking-wider transition-all ${
@@ -262,9 +275,9 @@ export default function App() {
                   })}
                 </div>
 
-                {/* Tab Content Display Area (Spacious & Decluttered) */}
+                {/* Quarters Tab Views */}
                 <main className="transition-all duration-300">
-                  {activeTab === 'biometrics' && (
+                  {activeQuarterTab === 'biometrics' && (
                     <BiometricsTab
                       crew={crew}
                       activeCrew={activeCrew}
@@ -273,21 +286,21 @@ export default function App() {
                     />
                   )}
 
-                  {activeTab === 'cardiac' && (
+                  {activeQuarterTab === 'cardiac' && (
                     <CardiacTab
                       activeCrew={activeCrew}
                       isEmergencyActive={isAnomalyActive}
                     />
                   )}
 
-                  {activeTab === 'digital-twin' && (
+                  {activeQuarterTab === 'digital-twin' && (
                     <DigitalTwinSimulator
                       activeCrew={activeCrew}
                       isEmergencyActive={isAnomalyActive}
                     />
                   )}
 
-                  {activeTab === 'ai-doctor' && (
+                  {activeQuarterTab === 'ai-doctor' && (
                     <DrBekurAITab
                       activeCrew={activeCrew}
                       isEmergencyActive={isAnomalyActive}
@@ -295,7 +308,7 @@ export default function App() {
                     />
                   )}
 
-                  {activeTab === 'comms-science' && (
+                  {activeQuarterTab === 'comms-science' && (
                     <CommsScienceTab
                       isEmergencyActive={isAnomalyActive}
                     />
@@ -305,47 +318,64 @@ export default function App() {
             )}
           </>
         )}
+
+        {/* 3. DEDICATED FULL-PAGE NASA GENELAB DNA RADIATION SUITE */}
+        {currentPage === 'genomics' && (
+          <GenomicDnaRadiationSuite
+            activeCrew={activeCrew}
+            isEmergencyActive={isAnomalyActive}
+          />
+        )}
+
+        {/* 4. DEDICATED FULL-PAGE ACOUSTIC VOICE STRESS & HYPOXIA SUITE */}
+        {currentPage === 'voice-triage' && (
+          <AcousticVoiceTriageSuite
+            activeCrew={activeCrew}
+            isEmergencyActive={isAnomalyActive}
+          />
+        )}
+
+        {/* 5. DEDICATED FULL-PAGE DR. BEKUR-AI CHIEF MEDICAL OFFICER */}
+        {currentPage === 'ai-doctor' && (
+          <DrBekurAITab
+            activeCrew={activeCrew}
+            isEmergencyActive={isAnomalyActive}
+            onTriggerEmergency={handleToggleAnomaly}
+          />
+        )}
+
+        {/* 6. DEDICATED FULL-PAGE DSN COMMS & NASA EVIDENCE */}
+        {currentPage === 'comms-science' && (
+          <CommsScienceTab
+            isEmergencyActive={isAnomalyActive}
+          />
+        )}
+
+        {/* 7. DEDICATED FULL-PAGE BIOMETRIC LOGIN ENCLAVE */}
+        {currentPage === 'login' && (
+          <BiometricLoginGate
+            crew={crew}
+            onAuthenticate={(id) => {
+              setAuthenticatedCrewId(id);
+              setActiveCrewId(id);
+              navigateTo('quarters');
+            }}
+          />
+        )}
       </div>
 
-      {/* Footer / NASA Space Apps Submission Bar */}
-      <footer className="mt-12 pt-5 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 font-mono gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-white font-orbitron font-bold">BEKUR-AEGIS</span>
-          <span>•</span>
-          <span>NASA Space Apps Challenge 2026 // Team BEKUR</span>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button onClick={() => setIsDataIntegrationOpen(true)} className="hover:text-hud-cyan transition">
-            Hardware Sensor Pairing (BLE)
-          </button>
-          <span>•</span>
-          <button onClick={() => setActiveTab('digital-twin')} className="hover:text-hud-cyan transition">
-            72h Digital Twin Lab
-          </button>
-          <span>•</span>
-          <button onClick={() => setActiveTab('comms-science')} className="hover:text-hud-cyan transition">
-            NASA HRP Standards
-          </button>
-          <span>•</span>
-          <span className="text-hud-emerald">Autonomous Deep Space Avionics</span>
-        </div>
-      </footer>
-
-      {/* Real Hardware & NASA Data Integration Modal */}
+      {/* Persistent Modals */}
       <DataIntegrationModal
         isOpen={isDataIntegrationOpen}
         onClose={() => setIsDataIntegrationOpen(false)}
-        onApplyCustomTelemetry={handleApplyCustomTelemetry}
+        onApplyCustomTelemetry={() => {}}
       />
-
-      {/* Modal for Legacy Quick AI Trigger if used */}
       <AIDoctorModal
         isOpen={isAIDocOpen}
         onClose={() => setIsAIDocOpen(false)}
-        defaultCrew={activeCrew}
-        onTriggerProtocol={() => {}}
+        activeCrew={activeCrew}
+        isAnomalyActive={isAnomalyActive}
       />
-
       <NasaRiskDrawer
         isOpen={isNasaRiskOpen}
         onClose={() => setIsNasaRiskOpen(false)}
