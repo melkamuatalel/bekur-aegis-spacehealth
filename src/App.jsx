@@ -3,18 +3,19 @@ import MissionHeader from './components/MissionHeader';
 import CrewSelector from './components/CrewSelector';
 import BiometricsTab from './components/BiometricsTab';
 import CardiacTab from './components/CardiacTab';
+import DigitalTwinSimulator from './components/DigitalTwinSimulator';
 import DrBekurAITab from './components/DrBekurAITab';
 import CommsScienceTab from './components/CommsScienceTab';
 import AIDoctorModal from './components/AIDoctorModal';
 import NasaRiskDrawer from './components/NasaRiskDrawer';
 import { CREW_MEMBERS } from './data/nasaHealthData';
-import { ShieldAlert, Activity, Heart, Bot, Radio, Database, Sparkles } from 'lucide-react';
+import { ShieldAlert, Activity, Heart, Bot, Radio, Cpu, Sparkles } from 'lucide-react';
 import { cockpitAudio } from './utils/audioAlert';
 
 export default function App() {
   const [crew, setCrew] = useState(CREW_MEMBERS);
   const [activeCrewId, setActiveCrewId] = useState('crew-02'); // Abebe Worku
-  const [activeTab, setActiveTab] = useState('biometrics'); // 'biometrics' | 'cardiac' | 'ai-doctor' | 'comms-science'
+  const [activeTab, setActiveTab] = useState('biometrics'); // 'biometrics' | 'cardiac' | 'digital-twin' | 'ai-doctor' | 'comms-science'
   const [isAnomalyActive, setIsAnomalyActive] = useState(false);
   const [isAIDocOpen, setIsAIDocOpen] = useState(false);
   const [isNasaRiskOpen, setIsNasaRiskOpen] = useState(false);
@@ -26,9 +27,10 @@ export default function App() {
   };
 
   const tabs = [
-    { id: 'biometrics', label: '3D Astronaut Biometrics', icon: Activity, badge: 'WebGL 3D' },
+    { id: 'biometrics', label: '3D In-Vivo Biometrics', icon: Activity, badge: 'Gender Adaptive' },
     { id: 'cardiac', label: 'Lead-II Cardiac Vector', icon: Heart, badge: '25mm/s Sweep' },
-    { id: 'ai-doctor', label: 'Dr. BEKUR-AI Clinic', icon: Bot, badge: '3D Avatar CMO' },
+    { id: 'digital-twin', label: '72h Digital Twin Lab', icon: Cpu, badge: 'Prognostic Novelty' },
+    { id: 'ai-doctor', label: 'Dr. BEKUR-AI Clinic', icon: Bot, badge: '3D Hologram CMO' },
     { id: 'comms-science', label: 'DSN Comms & NASA Science', icon: Radio, badge: 'Store & Fwd' },
   ];
 
@@ -77,7 +79,7 @@ export default function App() {
           isAnomalyActive={isAnomalyActive}
         />
 
-        {/* Spacious, Sleek Tab Navigation Bar (Apple/SpaceX Glassmorphism) */}
+        {/* Spacious, Sleek Tab Navigation Bar (SpaceX / Apple Glassmorphism) */}
         <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-space-900/90 border border-hud-cyan/25 backdrop-blur-md overflow-x-auto shadow-xl">
           {tabs.map((tab) => {
             const Icon = tab.icon;
@@ -89,7 +91,7 @@ export default function App() {
                   setActiveTab(tab.id);
                   cockpitAudio.playBlip();
                 }}
-                className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl font-orbitron text-xs font-bold tracking-wider transition-all ${
+                className={`flex-1 min-w-[190px] flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl font-orbitron text-xs font-bold tracking-wider transition-all ${
                   isActive
                     ? 'bg-hud-cyan text-space-950 shadow-lg shadow-hud-cyan/30 scale-[1.01]'
                     : 'text-slate-400 hover:text-white hover:bg-space-800/60'
@@ -98,7 +100,7 @@ export default function App() {
                 <Icon className={`w-4 h-4 ${isActive ? 'text-space-950' : 'text-hud-cyan'}`} />
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[9px] font-mono px-2 py-0.5 rounded-full uppercase ${
+                  className={`text-[8px] font-mono px-2 py-0.5 rounded-full uppercase ${
                     isActive ? 'bg-space-950/20 text-space-950' : 'bg-space-950 text-slate-400 border border-slate-800'
                   }`}
                 >
@@ -120,6 +122,13 @@ export default function App() {
 
           {activeTab === 'cardiac' && (
             <CardiacTab
+              activeCrew={activeCrew}
+              isEmergencyActive={isAnomalyActive}
+            />
+          )}
+
+          {activeTab === 'digital-twin' && (
+            <DigitalTwinSimulator
               activeCrew={activeCrew}
               isEmergencyActive={isAnomalyActive}
             />
@@ -149,6 +158,10 @@ export default function App() {
           <span>NASA Space Apps Challenge 2026 // Team BEKUR</span>
         </div>
         <div className="flex items-center space-x-3">
+          <button onClick={() => setActiveTab('digital-twin')} className="hover:text-hud-cyan transition">
+            72h Digital Twin Lab
+          </button>
+          <span>•</span>
           <button onClick={() => setActiveTab('comms-science')} className="hover:text-hud-cyan transition">
             NASA HRP Standards
           </button>
