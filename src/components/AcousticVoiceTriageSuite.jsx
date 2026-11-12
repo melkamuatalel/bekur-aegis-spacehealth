@@ -56,8 +56,12 @@ export default function AcousticVoiceTriageSuite({ activeCrew, isEmergencyActive
   ];
 
   const currentScenario = audioScenarios.find((s) => s.id === selectedScenario) || audioScenarios[0];
+  const audioCtxRef = useRef(null);
+  const analyserRef = useRef(null);
+  const micStreamRef = useRef(null);
+  const [liveVoiceMetrics, setLiveVoiceMetrics] = useState({ jitter: 0.8, pitch: 142, stress: 28 });
 
-  // Visual Spectrum Frequency Canvas
+  // Visual Spectrum Frequency Canvas (Supports Real Live Mic Audio or Synthetic Scenarios)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -66,6 +70,7 @@ export default function AcousticVoiceTriageSuite({ activeCrew, isEmergencyActive
     let phase = 0;
 
     const numBars = 48;
+    const freqData = new Uint8Array(64);
 
     const render = () => {
       phase += 0.08;
@@ -76,16 +81,29 @@ export default function AcousticVoiceTriageSuite({ activeCrew, isEmergencyActive
 
       const barWidth = w / numBars - 2;
 
+      // Read real microphone data if live mic is active
+      if (isLiveMicActive && analyserRef.current) {
+        analyserRef.current.getByteFrequencyData(freqData);
+      }
+
       for (let i = 0; i < numBars; i++) {
-        const factor = Math.sin(phase + i * 0.25) * 0.5 + 0.5;
-        const heightMultiplier = isPlayingAudio || isLiveMicActive ? 0.9 : 0.35;
-        const barHeight = Math.max(6, (factor * h * 0.8 + (Math.sin(i * 0.8 + phase * 2) * 20)) * heightMultiplier);
+        let barHeight = 6;
+
+        if (isLiveMicActive && analyserRef.current) {
+          const rawVal = freqData[i % freqData.length] / 255;
+          barHeight = Math.max(6, rawVal * h * 0.95);
+        } else {
+          const factor = Math.sin(phase + i * 0.25) * 0.5 + 0.5;
+          const heightMultiplier = isPlayingAudio ? 0.9 : 0.35;
+          barHeight = Math.max(6, (factor * h * 0.8 + (Math.sin(i * 0.8 + phase * 2) * 20)) * heightMultiplier);
+        }
+
         const x = i * (barWidth + 2);
         const y = h - barHeight;
 
         const isAlert = currentScenario.status === 'HIGH_STRESS';
         const gradient = ctx.createLinearGradient(0, y, 0, h);
-        gradient.addColorStop(0, isAlert ? '#f43f5e' : '#00f0ff');
+        gradient.addColorStop(0, isLiveMicActive ? '#10b981' : isAlert ? '#f43f5e' : '#00f0ff');
         gradient.addColorStop(1, '#0284c7');
 
         ctx.fillStyle = gradient;
@@ -105,15 +123,40 @@ export default function AcousticVoiceTriageSuite({ activeCrew, isEmergencyActive
   };
 
   const handleToggleMic = async () => {
-    try {
-      if (!isLiveMicActive) {
-        cockpitAudio.playBlip();
+    cockpitAudio.playBlip();
+    if (!isLiveMicActive) {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          micStreamRef.current = stream;
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) {
+            const ctx = new AudioContextClass();
+            audioCtxRef.current = ctx;
+            const src = ctx.createMediaStreamSource(stream);
+            const analyser = ctx.createAnalyser();
+            analyser.fftSize = 128;
+            src.connect(analyser);
+            analyserRef.current = analyser;
+          }
+        }
         setIsLiveMicActive(true);
-      } else {
-        setIsLiveMicActive(false);
+        setLiveVoiceMetrics({ jitter: 1.2, pitch: 175, stress: 34 });
+      } catch (err) {
+        console.warn('Microphone permission fallback to simulation:', err);
+        setIsLiveMicActive(true);
       }
-    } catch (e) {
-      console.warn('Microphone error', e);
+    } else {
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach((track) => track.stop());
+        micStreamRef.current = null;
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close().catch(() => {});
+        audioCtxRef.current = null;
+      }
+      analyserRef.current = null;
+      setIsLiveMicActive(false);
     }
   };
 
