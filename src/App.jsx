@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import MissionHeader from './components/MissionHeader';
 import CrewSelector from './components/CrewSelector';
-import VitalsGrid from './components/VitalsGrid';
-import AnatomyHologram from './components/AnatomyHologram';
-import EarthSyncQueue from './components/EarthSyncQueue';
+import BiometricsTab from './components/BiometricsTab';
+import CardiacTab from './components/CardiacTab';
+import DrBekurAITab from './components/DrBekurAITab';
+import CommsScienceTab from './components/CommsScienceTab';
 import AIDoctorModal from './components/AIDoctorModal';
 import NasaRiskDrawer from './components/NasaRiskDrawer';
 import { CREW_MEMBERS } from './data/nasaHealthData';
-import { ShieldAlert, AlertTriangle, Sparkles, Activity } from 'lucide-react';
+import { ShieldAlert, Activity, Heart, Bot, Radio, Database, Sparkles } from 'lucide-react';
+import { cockpitAudio } from './utils/audioAlert';
 
 export default function App() {
   const [crew, setCrew] = useState(CREW_MEMBERS);
-  const [activeCrewId, setActiveCrewId] = useState('crew-02'); // Default to Abebe Worku (has interesting SANS & fatigue indicators)
+  const [activeCrewId, setActiveCrewId] = useState('crew-02'); // Abebe Worku
+  const [activeTab, setActiveTab] = useState('biometrics'); // 'biometrics' | 'cardiac' | 'ai-doctor' | 'comms-science'
   const [isAnomalyActive, setIsAnomalyActive] = useState(false);
   const [isAIDocOpen, setIsAIDocOpen] = useState(false);
   const [isNasaRiskOpen, setIsNasaRiskOpen] = useState(false);
@@ -22,24 +25,31 @@ export default function App() {
     setIsAnomalyActive((prev) => !prev);
   };
 
+  const tabs = [
+    { id: 'biometrics', label: '3D Astronaut Biometrics', icon: Activity, badge: 'WebGL 3D' },
+    { id: 'cardiac', label: 'Lead-II Cardiac Vector', icon: Heart, badge: '25mm/s Sweep' },
+    { id: 'ai-doctor', label: 'Dr. BEKUR-AI Clinic', icon: Bot, badge: '3D Avatar CMO' },
+    { id: 'comms-science', label: 'DSN Comms & NASA Science', icon: Radio, badge: 'Store & Fwd' },
+  ];
+
   return (
-    <div className="min-h-screen p-3 sm:p-5 lg:p-8 max-w-7xl mx-auto flex flex-col justify-between">
-      <div>
+    <div className="min-h-screen p-3 sm:p-5 lg:p-8 max-w-7xl mx-auto flex flex-col justify-between selection:bg-hud-cyan selection:text-space-950">
+      <div className="space-y-6">
         {/* Master Mission Header */}
         <MissionHeader
           onTriggerAnomaly={handleToggleAnomaly}
           isAnomalyActive={isAnomalyActive}
-          onOpenAIDoc={() => setIsAIDocOpen(true)}
-          onOpenNasaEvidence={() => setIsNasaRiskOpen(true)}
+          onOpenAIDoc={() => setActiveTab('ai-doctor')}
+          onOpenNasaEvidence={() => setActiveTab('comms-science')}
         />
 
         {/* Emergency Alert Banner (visible when Anomaly is triggered) */}
         {isAnomalyActive && (
-          <div className="hud-panel-danger rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse">
+          <div className="hud-panel-danger rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse shadow-xl">
             <div className="flex items-center space-x-3">
               <ShieldAlert className="w-6 h-6 text-hud-rose shrink-0" />
               <div>
-                <h3 className="font-display font-bold text-white text-sm">
+                <h3 className="font-orbitron font-bold text-white text-sm">
                   CRITICAL BIOMETRIC ALERT // SOLAR PARTICLE EVENT & ARRHYTHMIA DETECTED
                 </h3>
                 <p className="text-xs text-rose-200 font-mono">
@@ -48,15 +58,18 @@ export default function App() {
               </div>
             </div>
             <button
-              onClick={() => setIsAIDocOpen(true)}
-              className="px-4 py-2 bg-hud-rose hover:bg-hud-rose/80 text-white font-mono font-bold text-xs rounded-lg uppercase tracking-wider shrink-0 transition"
+              onClick={() => {
+                setActiveTab('ai-doctor');
+                cockpitAudio.playBlip();
+              }}
+              className="px-4 py-2 bg-hud-rose hover:bg-hud-rose/80 text-white font-mono font-bold text-xs rounded-xl uppercase tracking-wider shrink-0 transition shadow-lg shadow-hud-rose/40"
             >
-              LAUNCH AI TRIAGE
+              LAUNCH DR. BEKUR-AI TRIAGE
             </button>
           </div>
         )}
 
-        {/* Crew Member Selector Tabs */}
+        {/* Multi-Astronaut Selector Bar */}
         <CrewSelector
           crew={crew}
           activeCrewId={activeCrewId}
@@ -64,50 +77,91 @@ export default function App() {
           isAnomalyActive={isAnomalyActive}
         />
 
-        {/* Main Telemetry & Diagnostic Center */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-          {/* Left Column: Vitals Telemetry + Lead-II ECG (7 Cols) */}
-          <div className="lg:col-span-7 space-y-6">
-            <VitalsGrid
-              crewMember={activeCrew}
+        {/* Spacious, Sleek Tab Navigation Bar (Apple/SpaceX Glassmorphism) */}
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-space-900/90 border border-hud-cyan/25 backdrop-blur-md overflow-x-auto shadow-xl">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  cockpitAudio.playBlip();
+                }}
+                className={`flex-1 min-w-[200px] flex items-center justify-center gap-2.5 px-4 py-3 rounded-xl font-orbitron text-xs font-bold tracking-wider transition-all ${
+                  isActive
+                    ? 'bg-hud-cyan text-space-950 shadow-lg shadow-hud-cyan/30 scale-[1.01]'
+                    : 'text-slate-400 hover:text-white hover:bg-space-800/60'
+                }`}
+              >
+                <Icon className={`w-4 h-4 ${isActive ? 'text-space-950' : 'text-hud-cyan'}`} />
+                <span>{tab.label}</span>
+                <span
+                  className={`text-[9px] font-mono px-2 py-0.5 rounded-full uppercase ${
+                    isActive ? 'bg-space-950/20 text-space-950' : 'bg-space-950 text-slate-400 border border-slate-800'
+                  }`}
+                >
+                  {tab.badge}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Tab Content Display Area (Spacious & Decluttered) */}
+        <main className="transition-all duration-300">
+          {activeTab === 'biometrics' && (
+            <BiometricsTab
+              activeCrew={activeCrew}
               isEmergencyActive={isAnomalyActive}
             />
-          </div>
+          )}
 
-          {/* Right Column: Holographic 3D Body Scan (5 Cols) */}
-          <div className="lg:col-span-5">
-            <AnatomyHologram
-              crewMember={activeCrew}
-              onSelectOrgan={(organId) => {
-                // Clicking an organ can inspect or trigger AI triage
-              }}
+          {activeTab === 'cardiac' && (
+            <CardiacTab
+              activeCrew={activeCrew}
+              isEmergencyActive={isAnomalyActive}
             />
-          </div>
-        </div>
+          )}
 
-        {/* Bottom Module: Deep Space Network Telemetry Buffer & Earth Sync */}
-        <EarthSyncQueue isAnomalyActive={isAnomalyActive} />
+          {activeTab === 'ai-doctor' && (
+            <DrBekurAITab
+              activeCrew={activeCrew}
+              isEmergencyActive={isAnomalyActive}
+              onTriggerEmergency={handleToggleAnomaly}
+            />
+          )}
+
+          {activeTab === 'comms-science' && (
+            <CommsScienceTab
+              isEmergencyActive={isAnomalyActive}
+            />
+          )}
+        </main>
       </div>
 
-      {/* Footer / Space Apps Submission Credits */}
-      <footer className="mt-8 pt-4 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 font-mono gap-3">
-        <div>
-          <span className="text-slate-300 font-bold">BEKUR-AEGIS</span> • NASA Space Apps Challenge 2026 // Team BEKUR
+      {/* Footer / NASA Space Apps Submission Bar */}
+      <footer className="mt-12 pt-5 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 font-mono gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-white font-orbitron font-bold">BEKUR-AEGIS</span>
+          <span>•</span>
+          <span>NASA Space Apps Challenge 2026 // Team BEKUR</span>
         </div>
         <div className="flex items-center space-x-3">
-          <button onClick={() => setIsNasaRiskOpen(true)} className="hover:text-hud-cyan transition">
+          <button onClick={() => setActiveTab('comms-science')} className="hover:text-hud-cyan transition">
             NASA HRP Standards
           </button>
           <span>•</span>
-          <button onClick={() => setIsAIDocOpen(true)} className="hover:text-hud-cyan transition">
-            Offline Edge AI
+          <button onClick={() => setActiveTab('ai-doctor')} className="hover:text-hud-cyan transition">
+            Dr. BEKUR-AI Edge
           </button>
           <span>•</span>
-          <span className="text-hud-emerald">Mars Transit Ready</span>
+          <span className="text-hud-emerald">Autonomous Deep Space Avionics</span>
         </div>
       </footer>
 
-      {/* AI Doctor Modal */}
+      {/* Modal for Legacy Quick AI Trigger if used */}
       <AIDoctorModal
         isOpen={isAIDocOpen}
         onClose={() => setIsAIDocOpen(false)}
@@ -115,7 +169,6 @@ export default function App() {
         onTriggerProtocol={() => {}}
       />
 
-      {/* NASA Evidence Modal */}
       <NasaRiskDrawer
         isOpen={isNasaRiskOpen}
         onClose={() => setIsNasaRiskOpen(false)}
