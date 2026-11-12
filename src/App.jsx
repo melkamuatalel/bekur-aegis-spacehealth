@@ -139,7 +139,9 @@ export default function App() {
         <main className="transition-all duration-300">
           {activeTab === 'biometrics' && (
             <BiometricsTab
+              crew={crew}
               activeCrew={activeCrew}
+              onSelectCrew={setActiveCrewId}
               isEmergencyActive={isAnomalyActive}
             />
           )}

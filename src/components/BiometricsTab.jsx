@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PhotorealisticAnatomyScanner from './PhotorealisticAnatomyScanner';
 import ThreeAstronautModel from './ThreeAstronautModel';
 import NasaIssFlightConsole from './NasaIssFlightConsole';
+import SquadronCockpitDeck from './SquadronCockpitDeck';
 import VitalsGrid from './VitalsGrid';
 import {
   Brain,
@@ -15,12 +16,13 @@ import {
   Layers,
   Box,
   Monitor,
+  Tv,
 } from 'lucide-react';
 import { cockpitAudio } from '../utils/audioAlert';
 
-export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
+export default function BiometricsTab({ crew, activeCrew, onSelectCrew, isEmergencyActive }) {
   const [selectedOrgan, setSelectedOrgan] = useState('cardio');
-  const [viewMode, setViewMode] = useState('nasa-iss'); // 'nasa-iss' | 'photorealistic' | 'webgl3d'
+  const [viewMode, setViewMode] = useState('nasa-iss'); // 'squadron-deck' | 'nasa-iss' | 'photorealistic' | 'webgl3d'
 
   const organDetails = {
     cns: {
@@ -100,10 +102,12 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 px-4 rounded-xl bg-space-900/90 border border-hud-cyan/25 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <span className="text-xs font-orbitron font-bold text-white uppercase tracking-wider">
-            ANATOMICAL RENDER DECK:
+            DISPLAY ARCHITECTURE:
           </span>
           <span className="text-xs font-mono text-hud-cyan font-bold">
-            {viewMode === 'nasa-iss'
+            {viewMode === 'squadron-deck'
+              ? 'SHARED SQUADRON COCKPIT WALL (4-CREW DECK)'
+              : viewMode === 'nasa-iss'
               ? 'NASA ISS FLIGHT MONITOR (PHOTO MATCH)'
               : viewMode === 'photorealistic'
               ? 'PHOTOREALISTIC IN-VIVO (GENDER ADAPTIVE)'
@@ -111,8 +115,22 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
           </span>
         </div>
 
-        {/* 3 Engine Switch Pills */}
+        {/* 4 Engine / Display Switch Pills */}
         <div className="flex items-center flex-wrap gap-1.5 bg-space-950 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+          <button
+            onClick={() => {
+              setViewMode('squadron-deck');
+              cockpitAudio.playBlip();
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+              viewMode === 'squadron-deck'
+                ? 'bg-hud-cyan text-space-950 font-bold shadow-md shadow-hud-cyan/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Tv className="w-3.5 h-3.5" />
+            <span>Squadron 4-Crew Deck</span>
+          </button>
           <button
             onClick={() => {
               setViewMode('nasa-iss');
@@ -158,6 +176,17 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
         </div>
       </div>
 
+      {/* MODE 0: SHARED SQUADRON COCKPIT WALL (4-Crew Multi-Monitor) */}
+      {viewMode === 'squadron-deck' && crew && (
+        <SquadronCockpitDeck
+          crew={crew}
+          activeCrewId={activeCrew.id}
+          onSelectCrew={onSelectCrew}
+          onOpenSoloConsole={() => setViewMode('nasa-iss')}
+          isEmergencyActive={isEmergencyActive}
+        />
+      )}
+
       {/* MODE 1: NASA ISS FLIGHT CONSOLE (Exact match to NASA Official Photo) */}
       {viewMode === 'nasa-iss' && (
         <NasaIssFlightConsole
@@ -167,7 +196,7 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
       )}
 
       {/* MODE 2 & 3: SCANNER / 3D MESH + TELEMETRY INSPECTOR */}
-      {viewMode !== 'nasa-iss' && (
+      {(viewMode === 'photorealistic' || viewMode === 'webgl3d') && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Anatomical Scanner (7 Cols) */}
           <div className="lg:col-span-7 flex flex-col">
@@ -253,8 +282,10 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
         </div>
       )}
 
-      {/* Spacious 6-Card Live Biometrics Telemetry Grid */}
-      <VitalsGrid crewMember={activeCrew} isEmergencyActive={isEmergencyActive} />
+      {/* Spacious 6-Card Live Biometrics Telemetry Grid (Solo Mode) */}
+      {viewMode !== 'squadron-deck' && (
+        <VitalsGrid crewMember={activeCrew} isEmergencyActive={isEmergencyActive} />
+      )}
     </div>
   );
 }

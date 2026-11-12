@@ -25,8 +25,10 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
   const [thermalFilter, setThermalFilter] = useState(false); // toggle thermal holographic overlay
   const [hoveredNode, setHoveredNode] = useState(null);
 
-  const bpm = activeCrew?.vitals?.bpm || (isEmergencyActive ? 128 : 72);
-  const spo2 = activeCrew?.vitals?.spo2 || 98.4;
+  const bpm = isEmergencyActive ? 128 : (activeCrew?.vitals?.bpm || activeCrew?.vitals?.heartRate || 72);
+  const spo2 = isEmergencyActive ? 92.4 : (activeCrew?.vitals?.spo2 || 98.4);
+  const respRate = isEmergencyActive ? 24 : (activeCrew?.vitals?.respirationRate || 14);
+  const vo2Max = activeCrew?.vo2Max || 84;
   const gender = activeCrew?.gender?.toLowerCase() === 'female' ? 'female' : 'male';
 
   const currentImgSrc = `/anatomy/${gender}_${posture}.jpg`;
@@ -180,23 +182,25 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
     {
       id: 'brain',
       label: 'BRAIN / CNS',
-      metric: 'ICP +4.2 mmHg',
+      metric: activeCrew?.organAlerts?.brain?.status === 'WARNING'
+        ? 'ALERT: SANS ICP Elevated (+5.8 mmHg)'
+        : (activeCrew?.organAlerts?.brain?.note || 'ICP +4.2 mmHg // Stable'),
       standing: { top: '10%', left: '50%' },
       seated: { top: '13%', left: '46%' },
-      color: 'hud-cyan',
+      color: activeCrew?.organAlerts?.brain?.status === 'WARNING' ? 'hud-rose' : 'hud-cyan',
     },
     {
       id: 'heart',
       label: 'CARDIAC COMPLEX',
-      metric: `${bpm} BPM // STABLE`,
+      metric: `${bpm} BPM // ${activeCrew?.organAlerts?.heart?.note || 'Stable Sinus Rhythm'}`,
       standing: { top: '27%', left: '48%' },
       seated: { top: '30%', left: '44%' },
-      color: 'hud-rose',
+      color: bpm > 90 ? 'hud-rose' : 'hud-cyan',
     },
     {
       id: 'lungs',
       label: 'PULMONARY BED',
-      metric: `${spo2}% SpO2`,
+      metric: `${spo2}% SpO2 // ${respRate} br/min`,
       standing: { top: '24%', left: '55%' },
       seated: { top: '28%', left: '52%' },
       color: 'hud-cyan',
@@ -204,7 +208,7 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
     {
       id: 'kidneys',
       label: 'HEPATORENAL',
-      metric: 'Ca++ Excretion +18%',
+      metric: activeCrew?.organAlerts?.bones?.note || 'Ca++ Excretion +18%',
       standing: { top: '36%', left: '50%' },
       seated: { top: '40%', left: '46%' },
       color: 'hud-amber',
@@ -212,7 +216,7 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
     {
       id: 'bones',
       label: 'SPINE & BONES',
-      metric: 'BMD -1.1%/mo',
+      metric: `BMD: ${activeCrew?.vitals?.bmdLossRatePercentPerMonth || -1.1}%/mo`,
       standing: { top: '50%', left: '50%' },
       seated: { top: '58%', left: '42%' },
       color: 'slate-300',
@@ -320,12 +324,12 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
           <div className="p-2.5 rounded-xl bg-space-950 border border-slate-800 space-y-1">
             <div className="flex items-center justify-between text-[10px] text-slate-400">
               <span className="text-hud-emerald font-bold">CH-03: RESPIRATION</span>
-              <span>14 br/min</span>
+              <span>{respRate} br/min</span>
             </div>
             <canvas ref={respCanvasRef} className="w-full h-12 block rounded bg-black/60" />
             <div className="flex items-baseline justify-between pt-1">
               <span className="text-[10px] text-slate-500">HEART RATE:</span>
-              <div className="font-orbitron font-bold text-2xl text-hud-emerald">
+              <div className={`font-orbitron font-bold text-2xl ${bpm > 90 ? 'text-hud-rose' : 'text-hud-emerald'}`}>
                 {bpm} <span className="text-xs font-mono text-slate-400">BPM</span>
               </div>
             </div>
@@ -415,8 +419,8 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
 
           {/* Bottom Coordinates Status */}
           <div className="absolute bottom-2 inset-x-4 flex items-center justify-between text-[9px] z-20 bg-space-950/90 px-3 py-1 rounded-xl border border-slate-800">
-            <span className="text-slate-400">SUBJECT: {activeCrew?.name}</span>
-            <span className="text-hud-cyan font-bold">{gender.toUpperCase()} IN-VIVO ANATOMY</span>
+            <span className="text-slate-300 font-bold">SUBJECT: {activeCrew?.name} ({activeCrew?.callsign})</span>
+            <span className="text-hud-cyan font-bold">{gender.toUpperCase()} IN-VIVO ANATOMY • {activeCrew?.role}</span>
           </div>
         </div>
 
@@ -427,9 +431,11 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
             <div>
               <span className="text-[10px] text-slate-400 uppercase block">CARDIOVASCULAR RESERVE</span>
               <div className="font-orbitron font-bold text-lg text-white mt-0.5">
-                84 <span className="text-xs text-hud-cyan font-normal">% VO2 MAX</span>
+                {vo2Max} <span className="text-xs text-hud-cyan font-normal">% VO2 MAX</span>
               </div>
-              <span className="text-[10px] text-emerald-400">Aerobic Tolerance High</span>
+              <span className={`text-[10px] ${vo2Max < 75 ? 'text-amber-400' : 'text-emerald-400'}`}>
+                {vo2Max < 75 ? 'Aerobic Reserve Guarded' : 'Aerobic Tolerance High'}
+              </span>
             </div>
 
             {/* Circular Gauge SVG */}
@@ -444,13 +450,13 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
                 <path
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   fill="none"
-                  stroke="#10b981"
+                  stroke={bpm > 90 ? "#f43f5e" : "#10b981"}
                   strokeWidth="3.5"
-                  strokeDasharray="84, 100"
+                  strokeDasharray={`${vo2Max}, 100`}
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="absolute font-orbitron font-bold text-xs text-hud-emerald">
+              <span className={`absolute font-orbitron font-bold text-xs ${bpm > 90 ? 'text-hud-rose' : 'text-hud-emerald'}`}>
                 {bpm}
               </span>
             </div>
