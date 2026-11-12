@@ -1,10 +1,24 @@
 import React, { useState } from 'react';
+import PhotorealisticAnatomyScanner from './PhotorealisticAnatomyScanner';
 import ThreeAstronautModel from './ThreeAstronautModel';
 import VitalsGrid from './VitalsGrid';
-import { Brain, Eye, Heart, Activity, Bone, Info, AlertTriangle, ShieldCheck } from 'lucide-react';
+import {
+  Brain,
+  Eye,
+  Heart,
+  Activity,
+  Bone,
+  Zap,
+  Info,
+  ShieldCheck,
+  Layers,
+  Box,
+} from 'lucide-react';
+import { cockpitAudio } from '../utils/audioAlert';
 
 export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
-  const [selectedOrgan, setSelectedOrgan] = useState('optic');
+  const [selectedOrgan, setSelectedOrgan] = useState('cardio');
+  const [viewMode, setViewMode] = useState('photorealistic'); // 'photorealistic' | 'webgl3d'
 
   const organDetails = {
     cns: {
@@ -51,6 +65,17 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
       nasaReference: 'NASA-STD-3001 Vol 2: Atmospheric Quality & Carbon Dioxide Management',
       countermeasure: 'Cabin LiOH scrubber monitoring, personal particulate scrubbers during hatch ops.',
     },
+    renal: {
+      name: 'Hepatorenal Clearance (Liver & Kidneys)',
+      icon: Zap,
+      riskLevel: 'Elevated Ca++',
+      metric: 'GFR: +14% | Urinary Ca++: +18%',
+      statusColor: 'text-amber-400',
+      pathophysiology:
+        'Accelerated bone resorption floods circulating plasma with ionized calcium, increasing urinary calcium oxalate saturation and acute nephrolithiasis (kidney stone) risk.',
+      nasaReference: 'NASA HRP Risk of Renal Stone Formation in Long-Duration Spaceflight',
+      countermeasure: 'Forced hydration (>2.5L/day), potassium citrate (20 mEq/day) urinary alkalization.',
+    },
     musculo: {
       name: 'Musculoskeletal & Bone Density',
       icon: Bone,
@@ -64,24 +89,76 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
     },
   };
 
-  const currentOrgan = organDetails[selectedOrgan] || organDetails.optic;
+  const currentOrgan = organDetails[selectedOrgan] || organDetails.cardio;
   const CurrentIcon = currentOrgan.icon;
 
   return (
     <div className="space-y-6">
-      {/* 3D WebGL Model and Organ Telemetry Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Interactive 3D Astronaut Model (7 Cols) */}
-        <div className="lg:col-span-7 flex flex-col">
-          <ThreeAstronautModel
-            activeCrew={activeCrew}
-            selectedOrgan={selectedOrgan}
-            onSelectOrgan={setSelectedOrgan}
-            isAnomalyActive={isEmergencyActive}
-          />
+      {/* Top Mode Switcher Bar */}
+      <div className="flex items-center justify-between p-2.5 px-4 rounded-xl bg-space-900/80 border border-hud-cyan/20 backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-orbitron font-bold text-white uppercase tracking-wider">
+            ANATOMICAL RENDER ENGINE:
+          </span>
+          <span className="text-xs font-mono text-hud-cyan font-bold">
+            {viewMode === 'photorealistic' ? 'HIGH-RES IN-VIVO TOMOGRAPHY' : '3D WEBGL INTERACTIVE MESH'}
+          </span>
         </div>
 
-        {/* Right Column: Selected Organ In-Depth Telemetry (5 Cols) */}
+        <div className="flex items-center gap-1.5 bg-space-950 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+          <button
+            onClick={() => {
+              setViewMode('photorealistic');
+              cockpitAudio.playBlip();
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+              viewMode === 'photorealistic'
+                ? 'bg-hud-cyan text-space-950 font-bold shadow-md shadow-hud-cyan/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Photorealistic In-Vivo</span>
+          </button>
+          <button
+            onClick={() => {
+              setViewMode('webgl3d');
+              cockpitAudio.playBlip();
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+              viewMode === 'webgl3d'
+                ? 'bg-hud-cyan text-space-950 font-bold shadow-md shadow-hud-cyan/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Box className="w-3.5 h-3.5" />
+            <span>3D Wireframe (360°)</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Main Stage: Scanner + In-Depth Telemetry */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Anatomical Scanner (7 Cols) */}
+        <div className="lg:col-span-7 flex flex-col">
+          {viewMode === 'photorealistic' ? (
+            <PhotorealisticAnatomyScanner
+              activeCrew={activeCrew}
+              selectedOrgan={selectedOrgan}
+              onSelectOrgan={setSelectedOrgan}
+              isEmergencyActive={isEmergencyActive}
+            />
+          ) : (
+            <ThreeAstronautModel
+              activeCrew={activeCrew}
+              selectedOrgan={selectedOrgan}
+              onSelectOrgan={setSelectedOrgan}
+              isAnomalyActive={isEmergencyActive}
+            />
+          )}
+        </div>
+
+        {/* Right Column: Selected Organ Clinical Telemetry & Action (5 Cols) */}
         <div className="lg:col-span-5 flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-space-900/90 border border-hud-cyan/30 shadow-2xl backdrop-blur-md">
           <div className="space-y-4">
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -94,7 +171,7 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
                     {currentOrgan.name}
                   </h3>
                   <span className="font-mono text-xs text-slate-400">
-                    ASTRONAUT: {activeCrew.name}
+                    SUBJECT: {activeCrew.name} ({activeCrew.gender})
                   </span>
                 </div>
               </div>
@@ -108,7 +185,7 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
 
             {/* Metric pill */}
             <div className="p-3 rounded-xl bg-space-950/80 border border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-mono text-slate-400">TELEMETRY VECTOR:</span>
+              <span className="text-xs font-mono text-slate-400">IN-VIVO VECTOR:</span>
               <span className="font-orbitron text-sm font-bold text-hud-cyan">
                 {currentOrgan.metric}
               </span>
@@ -138,8 +215,9 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
           </div>
 
           {/* NASA HRP Citation */}
-          <div className="mt-4 pt-3 border-t border-slate-800 text-[10px] font-mono text-slate-400">
-            Source: {currentOrgan.nasaReference}
+          <div className="mt-4 pt-3 border-t border-slate-800 text-[10px] font-mono text-slate-400 flex items-center justify-between">
+            <span>NASA-STD-3001 Clinical Standard</span>
+            <span className="text-hud-emerald font-bold">In-Flight Verified</span>
           </div>
         </div>
       </div>
