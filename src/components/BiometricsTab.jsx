@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import PhotorealisticAnatomyScanner from './PhotorealisticAnatomyScanner';
 import ThreeAstronautModel from './ThreeAstronautModel';
+import NasaIssFlightConsole from './NasaIssFlightConsole';
 import VitalsGrid from './VitalsGrid';
 import {
   Brain,
@@ -13,12 +14,13 @@ import {
   ShieldCheck,
   Layers,
   Box,
+  Monitor,
 } from 'lucide-react';
 import { cockpitAudio } from '../utils/audioAlert';
 
 export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
   const [selectedOrgan, setSelectedOrgan] = useState('cardio');
-  const [viewMode, setViewMode] = useState('photorealistic'); // 'photorealistic' | 'webgl3d'
+  const [viewMode, setViewMode] = useState('nasa-iss'); // 'nasa-iss' | 'photorealistic' | 'webgl3d'
 
   const organDetails = {
     cns: {
@@ -94,18 +96,37 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
 
   return (
     <div className="space-y-6">
-      {/* Top Mode Switcher Bar */}
-      <div className="flex items-center justify-between p-2.5 px-4 rounded-xl bg-space-900/80 border border-hud-cyan/20 backdrop-blur-md">
+      {/* Top 3-Engine Mode Switcher Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3 px-4 rounded-xl bg-space-900/90 border border-hud-cyan/25 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <span className="text-xs font-orbitron font-bold text-white uppercase tracking-wider">
-            ANATOMICAL RENDER ENGINE:
+            ANATOMICAL RENDER DECK:
           </span>
           <span className="text-xs font-mono text-hud-cyan font-bold">
-            {viewMode === 'photorealistic' ? 'HIGH-RES IN-VIVO TOMOGRAPHY' : '3D WEBGL INTERACTIVE MESH'}
+            {viewMode === 'nasa-iss'
+              ? 'NASA ISS FLIGHT MONITOR (PHOTO MATCH)'
+              : viewMode === 'photorealistic'
+              ? 'PHOTOREALISTIC IN-VIVO (GENDER ADAPTIVE)'
+              : '3D WEBGL VOLUMETRIC MESH'}
           </span>
         </div>
 
-        <div className="flex items-center gap-1.5 bg-space-950 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+        {/* 3 Engine Switch Pills */}
+        <div className="flex items-center flex-wrap gap-1.5 bg-space-950 p-1 rounded-xl border border-slate-800 text-xs font-mono">
+          <button
+            onClick={() => {
+              setViewMode('nasa-iss');
+              cockpitAudio.playBlip();
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+              viewMode === 'nasa-iss'
+                ? 'bg-hud-emerald text-space-950 font-bold shadow-md shadow-hud-emerald/30'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Monitor className="w-3.5 h-3.5" />
+            <span>NASA ISS Flight Console</span>
+          </button>
           <button
             onClick={() => {
               setViewMode('photorealistic');
@@ -137,90 +158,100 @@ export default function BiometricsTab({ activeCrew, isEmergencyActive }) {
         </div>
       </div>
 
-      {/* Main Stage: Scanner + In-Depth Telemetry */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column: Anatomical Scanner (7 Cols) */}
-        <div className="lg:col-span-7 flex flex-col">
-          {viewMode === 'photorealistic' ? (
-            <PhotorealisticAnatomyScanner
-              activeCrew={activeCrew}
-              selectedOrgan={selectedOrgan}
-              onSelectOrgan={setSelectedOrgan}
-              isEmergencyActive={isEmergencyActive}
-            />
-          ) : (
-            <ThreeAstronautModel
-              activeCrew={activeCrew}
-              selectedOrgan={selectedOrgan}
-              onSelectOrgan={setSelectedOrgan}
-              isAnomalyActive={isEmergencyActive}
-            />
-          )}
-        </div>
+      {/* MODE 1: NASA ISS FLIGHT CONSOLE (Exact match to NASA Official Photo) */}
+      {viewMode === 'nasa-iss' && (
+        <NasaIssFlightConsole
+          activeCrew={activeCrew}
+          isEmergencyActive={isEmergencyActive}
+        />
+      )}
 
-        {/* Right Column: Selected Organ Clinical Telemetry & Action (5 Cols) */}
-        <div className="lg:col-span-5 flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-space-900/90 border border-hud-cyan/30 shadow-2xl backdrop-blur-md">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center space-x-3">
-                <div className="p-2.5 rounded-xl bg-space-950 border border-slate-700">
-                  <CurrentIcon className={`w-5 h-5 ${currentOrgan.statusColor}`} />
-                </div>
-                <div>
-                  <h3 className="font-orbitron font-bold text-sm sm:text-base text-white">
-                    {currentOrgan.name}
-                  </h3>
-                  <span className="font-mono text-xs text-slate-400">
-                    SUBJECT: {activeCrew.name} ({activeCrew.gender})
-                  </span>
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] font-mono text-slate-400 uppercase">STATUS</span>
-                <div className={`font-mono text-xs font-bold ${currentOrgan.statusColor}`}>
-                  {currentOrgan.riskLevel}
-                </div>
-              </div>
-            </div>
-
-            {/* Metric pill */}
-            <div className="p-3 rounded-xl bg-space-950/80 border border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-mono text-slate-400">IN-VIVO VECTOR:</span>
-              <span className="font-orbitron text-sm font-bold text-hud-cyan">
-                {currentOrgan.metric}
-              </span>
-            </div>
-
-            {/* Pathophysiology description */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 text-hud-cyan" />
-                Microgravity Pathophysiology
-              </span>
-              <p className="text-xs text-slate-300 leading-relaxed font-sans bg-space-950/50 p-3 rounded-xl border border-slate-800/60">
-                {currentOrgan.pathophysiology}
-              </p>
-            </div>
-
-            {/* Prescribed Countermeasure */}
-            <div className="space-y-1.5">
-              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-hud-emerald" />
-                Prescribed Countermeasure
-              </span>
-              <p className="text-xs text-emerald-300/90 leading-relaxed font-mono bg-emerald-950/20 p-3 rounded-xl border border-emerald-900/40">
-                {currentOrgan.countermeasure}
-              </p>
-            </div>
+      {/* MODE 2 & 3: SCANNER / 3D MESH + TELEMETRY INSPECTOR */}
+      {viewMode !== 'nasa-iss' && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Column: Anatomical Scanner (7 Cols) */}
+          <div className="lg:col-span-7 flex flex-col">
+            {viewMode === 'photorealistic' ? (
+              <PhotorealisticAnatomyScanner
+                activeCrew={activeCrew}
+                selectedOrgan={selectedOrgan}
+                onSelectOrgan={setSelectedOrgan}
+                isEmergencyActive={isEmergencyActive}
+              />
+            ) : (
+              <ThreeAstronautModel
+                activeCrew={activeCrew}
+                selectedOrgan={selectedOrgan}
+                onSelectOrgan={setSelectedOrgan}
+                isAnomalyActive={isEmergencyActive}
+              />
+            )}
           </div>
 
-          {/* NASA HRP Citation */}
-          <div className="mt-4 pt-3 border-t border-slate-800 text-[10px] font-mono text-slate-400 flex items-center justify-between">
-            <span>NASA-STD-3001 Clinical Standard</span>
-            <span className="text-hud-emerald font-bold">In-Flight Verified</span>
+          {/* Right Column: Selected Organ Clinical Telemetry & Action (5 Cols) */}
+          <div className="lg:col-span-5 flex flex-col justify-between p-5 sm:p-6 rounded-2xl bg-space-900/90 border border-hud-cyan/30 shadow-2xl backdrop-blur-md">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 rounded-xl bg-space-950 border border-slate-700">
+                    <CurrentIcon className={`w-5 h-5 ${currentOrgan.statusColor}`} />
+                  </div>
+                  <div>
+                    <h3 className="font-orbitron font-bold text-sm sm:text-base text-white">
+                      {currentOrgan.name}
+                    </h3>
+                    <span className="font-mono text-xs text-slate-400">
+                      SUBJECT: {activeCrew.name} ({activeCrew.gender})
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase">STATUS</span>
+                  <div className={`font-mono text-xs font-bold ${currentOrgan.statusColor}`}>
+                    {currentOrgan.riskLevel}
+                  </div>
+                </div>
+              </div>
+
+              {/* Metric pill */}
+              <div className="p-3 rounded-xl bg-space-950/80 border border-slate-800 flex items-center justify-between">
+                <span className="text-xs font-mono text-slate-400">IN-VIVO VECTOR:</span>
+                <span className="font-orbitron text-sm font-bold text-hud-cyan">
+                  {currentOrgan.metric}
+                </span>
+              </div>
+
+              {/* Pathophysiology description */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5 text-hud-cyan" />
+                  Microgravity Pathophysiology
+                </span>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans bg-space-950/50 p-3 rounded-xl border border-slate-800/60">
+                  {currentOrgan.pathophysiology}
+                </p>
+              </div>
+
+              {/* Prescribed Countermeasure */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-hud-emerald" />
+                  Prescribed Countermeasure
+                </span>
+                <p className="text-xs text-emerald-300/90 leading-relaxed font-mono bg-emerald-950/20 p-3 rounded-xl border border-emerald-900/40">
+                  {currentOrgan.countermeasure}
+                </p>
+              </div>
+            </div>
+
+            {/* NASA HRP Citation */}
+            <div className="mt-4 pt-3 border-t border-slate-800 text-[10px] font-mono text-slate-400 flex items-center justify-between">
+              <span>NASA-STD-3001 Clinical Standard</span>
+              <span className="text-hud-emerald font-bold">In-Flight Verified</span>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Spacious 6-Card Live Biometrics Telemetry Grid */}
       <VitalsGrid crewMember={activeCrew} isEmergencyActive={isEmergencyActive} />
