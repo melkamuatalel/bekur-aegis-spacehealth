@@ -10,6 +10,7 @@ import SquadronCockpitDeck from './components/SquadronCockpitDeck';
 import BiometricLoginGate from './components/BiometricLoginGate';
 import GenomicDnaRadiationSuite from './components/GenomicDnaRadiationSuite';
 import AcousticVoiceTriageSuite from './components/AcousticVoiceTriageSuite';
+import AutoPitchWalkthroughModal from './components/AutoPitchWalkthroughModal';
 import DataIntegrationModal from './components/DataIntegrationModal';
 import AIDoctorModal from './components/AIDoctorModal';
 import NasaRiskDrawer from './components/NasaRiskDrawer';
@@ -41,6 +42,7 @@ export default function App() {
   const [isAIDocOpen, setIsAIDocOpen] = useState(false);
   const [isNasaRiskOpen, setIsNasaRiskOpen] = useState(false);
   const [isDataIntegrationOpen, setIsDataIntegrationOpen] = useState(false);
+  const [isPitchWalkthroughOpen, setIsPitchWalkthroughOpen] = useState(false);
 
   // Hash-based Full Page Router (#/cockpit, #/quarters, #/genomics, #/voice-triage, #/ai-doctor, #/comms-science, #/login)
   const getInitialPage = () => {
@@ -105,6 +107,7 @@ export default function App() {
           onOpenAIDoc={() => navigateTo('ai-doctor')}
           onOpenNasaEvidence={() => navigateTo('comms-science')}
           onOpenDataIntegration={() => setIsDataIntegrationOpen(true)}
+          onOpenPitchWalkthrough={() => setIsPitchWalkthroughOpen(true)}
         />
 
         {/* Emergency Alert Banner (visible when Anomaly is triggered) */}
@@ -365,6 +368,11 @@ export default function App() {
       </div>
 
       {/* Persistent Modals */}
+      <AutoPitchWalkthroughModal
+        isOpen={isPitchWalkthroughOpen}
+        onClose={() => setIsPitchWalkthroughOpen(false)}
+        onNavigate={navigateTo}
+      />
       <DataIntegrationModal
         isOpen={isDataIntegrationOpen}
         onClose={() => setIsDataIntegrationOpen(false)}

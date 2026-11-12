@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   Bluetooth,
   Database,
+  Film,
 } from 'lucide-react';
 import BekurLogo from './BekurLogo';
 import { MISSION_METADATA } from '../data/nasaHealthData';
@@ -23,6 +24,7 @@ export default function MissionHeader({
   onOpenAIDoc,
   onOpenNasaEvidence,
   onOpenDataIntegration,
+  onOpenPitchWalkthrough,
 }) {
   const [isMuted, setIsMuted] = useState(false);
   const [earthTime, setEarthTime] = useState(new Date().toUTCString());
@@ -55,6 +57,18 @@ export default function MissionHeader({
 
         {/* Tactical Cockpit Controls */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Automated 2-Minute Video Pitch Walkthrough Button */}
+          <button
+            onClick={() => {
+              cockpitAudio.playBlip();
+              onOpenPitchWalkthrough();
+            }}
+            className="px-3.5 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white flex items-center space-x-2 transition shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+          >
+            <Film className="w-4 h-4 text-purple-200 animate-pulse" />
+            <span>2-MIN VIDEO PITCH</span>
+          </button>
+
           {/* Live Data & Hardware Integration Button */}
           <button
             onClick={() => {
