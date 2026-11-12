@@ -6,6 +6,7 @@ import CardiacTab from './components/CardiacTab';
 import DigitalTwinSimulator from './components/DigitalTwinSimulator';
 import DrBekurAITab from './components/DrBekurAITab';
 import CommsScienceTab from './components/CommsScienceTab';
+import DataIntegrationModal from './components/DataIntegrationModal';
 import AIDoctorModal from './components/AIDoctorModal';
 import NasaRiskDrawer from './components/NasaRiskDrawer';
 import { CREW_MEMBERS } from './data/nasaHealthData';
@@ -19,11 +20,33 @@ export default function App() {
   const [isAnomalyActive, setIsAnomalyActive] = useState(false);
   const [isAIDocOpen, setIsAIDocOpen] = useState(false);
   const [isNasaRiskOpen, setIsNasaRiskOpen] = useState(false);
+  const [isDataIntegrationOpen, setIsDataIntegrationOpen] = useState(false);
 
   const activeCrew = crew.find((c) => c.id === activeCrewId) || crew[0];
 
   const handleToggleAnomaly = () => {
     setIsAnomalyActive((prev) => !prev);
+  };
+
+  // Dynamically feed live Bluetooth sensor data or NASA dataset into active astronaut!
+  const handleApplyCustomTelemetry = (customData) => {
+    setCrew((prevCrew) =>
+      prevCrew.map((c) => {
+        if (c.id === activeCrewId) {
+          return {
+            ...c,
+            vitals: {
+              ...c.vitals,
+              heartRate: customData.bpm || c.vitals.heartRate,
+              bpm: customData.bpm || c.vitals.bpm,
+              spo2: customData.spo2 || c.vitals.spo2,
+            },
+            sansScore: customData.sans !== undefined ? customData.sans : c.sansScore,
+          };
+        }
+        return c;
+      })
+    );
   };
 
   const tabs = [
@@ -43,6 +66,7 @@ export default function App() {
           isAnomalyActive={isAnomalyActive}
           onOpenAIDoc={() => setActiveTab('ai-doctor')}
           onOpenNasaEvidence={() => setActiveTab('comms-science')}
+          onOpenDataIntegration={() => setIsDataIntegrationOpen(true)}
         />
 
         {/* Emergency Alert Banner (visible when Anomaly is triggered) */}
@@ -158,6 +182,10 @@ export default function App() {
           <span>NASA Space Apps Challenge 2026 // Team BEKUR</span>
         </div>
         <div className="flex items-center space-x-3">
+          <button onClick={() => setIsDataIntegrationOpen(true)} className="hover:text-hud-cyan transition">
+            Hardware Sensor Pairing (BLE)
+          </button>
+          <span>•</span>
           <button onClick={() => setActiveTab('digital-twin')} className="hover:text-hud-cyan transition">
             72h Digital Twin Lab
           </button>
@@ -166,13 +194,16 @@ export default function App() {
             NASA HRP Standards
           </button>
           <span>•</span>
-          <button onClick={() => setActiveTab('ai-doctor')} className="hover:text-hud-cyan transition">
-            Dr. BEKUR-AI Edge
-          </button>
-          <span>•</span>
           <span className="text-hud-emerald">Autonomous Deep Space Avionics</span>
         </div>
       </footer>
+
+      {/* Real Hardware & NASA Data Integration Modal */}
+      <DataIntegrationModal
+        isOpen={isDataIntegrationOpen}
+        onClose={() => setIsDataIntegrationOpen(false)}
+        onApplyCustomTelemetry={handleApplyCustomTelemetry}
+      />
 
       {/* Modal for Legacy Quick AI Trigger if used */}
       <AIDoctorModal

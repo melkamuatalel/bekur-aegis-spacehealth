@@ -10,6 +10,8 @@ import {
   Compass,
   Cpu,
   ShieldAlert,
+  Bluetooth,
+  Database,
 } from 'lucide-react';
 import BekurLogo from './BekurLogo';
 import { MISSION_METADATA } from '../data/nasaHealthData';
@@ -20,6 +22,7 @@ export default function MissionHeader({
   isAnomalyActive,
   onOpenAIDoc,
   onOpenNasaEvidence,
+  onOpenDataIntegration,
 }) {
   const [isMuted, setIsMuted] = useState(false);
   const [earthTime, setEarthTime] = useState(new Date().toUTCString());
@@ -52,6 +55,18 @@ export default function MissionHeader({
 
         {/* Tactical Cockpit Controls */}
         <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+          {/* Live Data & Hardware Integration Button */}
+          <button
+            onClick={() => {
+              cockpitAudio.playBlip();
+              onOpenDataIntegration();
+            }}
+            className="px-3.5 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-space-950 hover:bg-space-900 text-hud-cyan border border-hud-cyan/40 hover:border-hud-cyan flex items-center space-x-2 transition shadow-[0_0_15px_rgba(0,240,255,0.2)]"
+          >
+            <Bluetooth className="w-4 h-4 text-hud-cyan animate-pulse" />
+            <span>LIVE DATA & SENSORS</span>
+          </button>
+
           {/* Simulate Emergency / Anomaly Toggle */}
           <button
             onClick={() => {
@@ -62,7 +77,7 @@ export default function MissionHeader({
               }
               onTriggerAnomaly();
             }}
-            className={`px-4 py-2.5 rounded-xl text-xs font-orbitron font-bold flex items-center space-x-2 transition shadow-lg ${
+            className={`px-3.5 py-2.5 rounded-xl text-xs font-orbitron font-bold flex items-center space-x-2 transition shadow-lg ${
               isAnomalyActive
                 ? 'bg-hud-rose text-white border border-hud-rose animate-pulse shadow-[0_0_25px_rgba(244,63,94,0.7)]'
                 : 'bg-space-950 hover:bg-space-900 text-hud-rose border border-hud-rose/40 hover:border-hud-rose shadow-md'
@@ -78,22 +93,11 @@ export default function MissionHeader({
               cockpitAudio.playBlip();
               onOpenAIDoc();
             }}
-            className="px-4 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-hud-cyan text-space-950 hover:bg-hud-cyan/85 flex items-center space-x-2 transition shadow-[0_0_20px_rgba(0,240,255,0.4)]"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-hud-cyan text-space-950 hover:bg-hud-cyan/85 flex items-center space-x-2 transition shadow-[0_0_20px_rgba(0,240,255,0.4)]"
           >
             <Bot className="w-4 h-4" />
-            <span>AI CHIEF MEDICAL OFFICER</span>
-          </button>
-
-          {/* NASA HRP Evidence Quick Launcher */}
-          <button
-            onClick={() => {
-              cockpitAudio.playBlip();
-              onOpenNasaEvidence();
-            }}
-            className="px-3.5 py-2.5 rounded-xl text-xs font-mono text-slate-300 hover:text-white bg-space-950 border border-slate-800 hover:border-hud-cyan/60 flex items-center space-x-2 transition"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-hud-cyan" />
-            <span className="hidden sm:inline">NASA HRP EVIDENCE</span>
+            <span className="hidden sm:inline">AI CHIEF MEDICAL OFFICER</span>
+            <span className="sm:hidden">AI CMO</span>
           </button>
 
           {/* Master Audio Mute Toggle */}
