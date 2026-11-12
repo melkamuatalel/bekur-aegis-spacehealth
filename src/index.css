@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #030712;
+    background-image: 
+      radial-gradient(circle at 50% 0%, rgba(0, 240, 255, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.05) 0%, transparent 40%),
+      linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 40px 40px, 40px 40px;
+  }
+}
+
+/* Sci-fi HUD Glassmorphism Panels */
+.hud-panel {
+  background: rgba(11, 20, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 12px 0 rgba(0, 240, 255, 0.04);
+}
+
+.hud-panel-danger {
+  background: rgba(42, 11, 20, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(244, 63, 94, 0.2), inset 0 0 16px 0 rgba(244, 63, 94, 0.1);
+}
+
+.hud-panel-warning {
+  background: rgba(42, 30, 11, 0.7);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 8px 32px 0 rgba(245, 158, 11, 0.2);
+}
+
+/* Glowing text and borders */
+.hud-glow-cyan {
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+}
+
+.hud-glow-emerald {
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+.hud-glow-rose {
+  text-shadow: 0 0 8px rgba(244, 63, 94, 0.8);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #080d1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a284c;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #00f0ff;
+}
