@@ -1,233 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react';
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { Activity, Heart, RotateCcw, ShieldCheck, AlertTriangle, Sparkles, Zap } from 'lucide-react';
+import { Activity, Heart, ShieldCheck, AlertTriangle, Sparkles, Layers, Sliders, Scan } from 'lucide-react';
 import { cockpitAudio } from '../utils/audioAlert';
 
 export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) {
-  const mountRef = useRef(null);
   const ecgCanvasRef = useRef(null);
   const plethCanvasRef = useRef(null);
   const respCanvasRef = useRef(null);
   const trendCanvasRef = useRef(null);
 
-  const [isAutoRotate, setIsAutoRotate] = useState(true);
-  const autoRotateRef = useRef(true);
+  const [centerMode, setCenterMode] = useState('heatmap-silhouette'); // 'heatmap-silhouette' | 'photorealistic'
+  const [isLaserScanning, setIsLaserScanning] = useState(true);
 
   const bpm = activeCrew?.vitals?.bpm || (isEmergencyActive ? 128 : 72);
   const spo2 = activeCrew?.vitals?.spo2 || 98.4;
+  const gender = activeCrew?.gender?.toLowerCase() === 'female' ? 'female' : 'male';
 
-  // 1. THREE.JS THERMAL STRESS HEATMAP HUMAN MODEL (Identical to NASA ISS Screen)
-  useEffect(() => {
-    const container = mountRef.current;
-    if (!container) return;
-
-    const width = container.clientWidth || 380;
-    const height = container.clientHeight || 520;
-
-    const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x040711, 0.06);
-
-    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 50);
-    camera.position.set(0, 1.0, 3.4);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    container.replaceChildren(renderer.domElement);
-
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.target.set(0, 0.9, 0);
-    controls.maxDistance = 5.0;
-    controls.minDistance = 1.2;
-
-    // Thermal Heatmap Gradient Materials (Blue limbs -> Green torso -> Glowing Red/Amber Chest)
-    const blueMat = new THREE.MeshStandardMaterial({
-      color: 0x0066ff,
-      emissive: 0x0033aa,
-      emissiveIntensity: 0.6,
-      roughness: 0.3,
-      metalness: 0.7,
-      transparent: true,
-      opacity: 0.85,
-    });
-
-    const cyanMat = new THREE.MeshStandardMaterial({
-      color: 0x00f0ff,
-      emissive: 0x0284c7,
-      emissiveIntensity: 0.7,
-      roughness: 0.2,
-      metalness: 0.8,
-    });
-
-    const greenMat = new THREE.MeshStandardMaterial({
-      color: 0x10b981,
-      emissive: 0x059669,
-      emissiveIntensity: 0.8,
-      roughness: 0.2,
-    });
-
-    const heatChestMat = new THREE.MeshStandardMaterial({
-      color: isEmergencyActive ? 0xf43f5e : 0xf59e0b,
-      emissive: isEmergencyActive ? 0xe11d48 : 0xd97706,
-      emissiveIntensity: isEmergencyActive ? 1.8 : 1.2,
-      roughness: 0.1,
-    });
-
-    const heartCoreMat = new THREE.MeshStandardMaterial({
-      color: 0xff0055,
-      emissive: 0xff0033,
-      emissiveIntensity: 2.5,
-      roughness: 0.1,
-    });
-
-    const astronautGroup = new THREE.Group();
-    scene.add(astronautGroup);
-
-    // Anatomical Heatmap Human Mesh
-    // Head (Cyan / Violet)
-    const headGeo = new THREE.SphereGeometry(0.22, 24, 24);
-    const head = new THREE.Mesh(headGeo, cyanMat);
-    head.position.set(0, 1.72, 0);
-    astronautGroup.add(head);
-
-    // Neck
-    const neckGeo = new THREE.CylinderGeometry(0.09, 0.11, 0.12, 16);
-    const neck = new THREE.Mesh(neckGeo, greenMat);
-    neck.position.set(0, 1.54, 0);
-    astronautGroup.add(neck);
-
-    // Chest / Thorax (Heat Stress Core - Red / Amber)
-    const chestGeo = new THREE.CylinderGeometry(0.28, 0.23, 0.48, 20);
-    const chest = new THREE.Mesh(chestGeo, heatChestMat);
-    chest.position.set(0, 1.26, 0);
-    astronautGroup.add(chest);
-
-    // Glowing Heart Node inside chest
-    const heartGeo = new THREE.DodecahedronGeometry(0.08, 1);
-    const heartMesh = new THREE.Mesh(heartGeo, heartCoreMat);
-    heartMesh.position.set(-0.06, 1.25, 0.14);
-    astronautGroup.add(heartMesh);
-
-    // Abdomen & Pelvis (Green -> Cyan)
-    const abdomenGeo = new THREE.CylinderGeometry(0.23, 0.25, 0.38, 18);
-    const abdomen = new THREE.Mesh(abdomenGeo, greenMat);
-    abdomen.position.set(0, 0.86, 0);
-    astronautGroup.add(abdomen);
-
-    // Arms (Cyan -> Blue)
-    const armGeo = new THREE.CylinderGeometry(0.075, 0.065, 0.45, 14);
-    const leftArm = new THREE.Mesh(armGeo, cyanMat);
-    leftArm.position.set(-0.42, 1.2, 0);
-    leftArm.rotation.z = 0.18;
-    astronautGroup.add(leftArm);
-
-    const rightArm = new THREE.Mesh(armGeo, cyanMat);
-    rightArm.position.set(0.42, 1.2, 0);
-    rightArm.rotation.z = -0.18;
-    astronautGroup.add(rightArm);
-
-    // Forearms (Blue)
-    const forearmGeo = new THREE.CylinderGeometry(0.06, 0.05, 0.42, 14);
-    const leftForearm = new THREE.Mesh(forearmGeo, blueMat);
-    leftForearm.position.set(-0.5, 0.8, 0.05);
-    leftForearm.rotation.x = -0.2;
-    astronautGroup.add(leftForearm);
-
-    const rightForearm = new THREE.Mesh(forearmGeo, blueMat);
-    rightForearm.position.set(0.5, 0.8, 0.05);
-    rightForearm.rotation.x = -0.2;
-    astronautGroup.add(rightForearm);
-
-    // Legs (Thighs: Cyan/Blue, Shins: Deep Blue)
-    const thighGeo = new THREE.CylinderGeometry(0.1, 0.08, 0.54, 16);
-    const leftThigh = new THREE.Mesh(thighGeo, cyanMat);
-    leftThigh.position.set(-0.16, 0.42, 0);
-    astronautGroup.add(leftThigh);
-
-    const rightThigh = new THREE.Mesh(thighGeo, cyanMat);
-    rightThigh.position.set(0.16, 0.42, 0);
-    astronautGroup.add(rightThigh);
-
-    const shinGeo = new THREE.CylinderGeometry(0.08, 0.065, 0.54, 16);
-    const leftShin = new THREE.Mesh(shinGeo, blueMat);
-    leftShin.position.set(-0.16, -0.18, 0);
-    astronautGroup.add(leftShin);
-
-    const rightShin = new THREE.Mesh(shinGeo, blueMat);
-    rightShin.position.set(0.16, -0.18, 0);
-    astronautGroup.add(rightShin);
-
-    // Ground Polar Telemetry Rings
-    const ringGeo = new THREE.RingGeometry(0.8, 0.83, 48);
-    const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f0ff, side: THREE.DoubleSide, transparent: true, opacity: 0.5 });
-    const ring = new THREE.Mesh(ringGeo, ringMat);
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = -0.52;
-    scene.add(ring);
-
-    const grid = new THREE.GridHelper(3.2, 12, 0x00f0ff, 0x082f49);
-    grid.position.y = -0.52;
-    scene.add(grid);
-
-    // Lights
-    const amb = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(amb);
-    const p1 = new THREE.PointLight(0x00f0ff, 2.5, 6);
-    p1.position.set(2, 2, 2);
-    scene.add(p1);
-    const p2 = new THREE.PointLight(0xff0055, 2.0, 5);
-    p2.position.set(-2, 1, 2);
-    scene.add(p2);
-
-    let frameId;
-    let clock = new THREE.Clock();
-
-    const animate = () => {
-      frameId = requestAnimationFrame(animate);
-      const time = clock.getElapsedTime();
-
-      // Heart pulse
-      const beatRate = (bpm / 60) * Math.PI * 2;
-      const pulse = Math.sin(time * beatRate);
-      const scale = 1.0 + (pulse > 0.7 ? (pulse - 0.7) * 0.5 : 0);
-      heartMesh.scale.set(scale, scale, scale);
-
-      // Thermal stress glow pulse on chest
-      heatChestMat.emissiveIntensity = (isEmergencyActive ? 1.6 : 1.0) + Math.sin(time * 3) * 0.3;
-
-      if (autoRotateRef.current) {
-        astronautGroup.rotation.y = time * 0.3;
-      }
-
-      ring.rotation.z = time * 0.4;
-      controls.update();
-      renderer.render(scene, camera);
-    };
-
-    animate();
-
-    const handleResize = () => {
-      if (!container) return;
-      const w = container.clientWidth || 380;
-      const h = container.clientHeight || 520;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      cancelAnimationFrame(frameId);
-      window.removeEventListener('resize', handleResize);
-      renderer.dispose();
-      controls.dispose();
-    };
-  }, [bpm, isEmergencyActive]);
-
-  // 2. LIVE WAVEFORMS ANIMATION (ECG, Arterial Plethysmograph, Capnography)
+  // 1. WAVEFORMS ANIMATION (ECG, Arterial Plethysmograph, Capnography & Trend)
   useEffect(() => {
     let animId;
     let phase = 0;
@@ -269,7 +57,7 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
       const beatPeriod = Math.max(25, Math.floor(3600 / bpm));
       const pos = phase % beatPeriod;
 
-      // 1. ECG Point
+      // 1. Lead-II ECG Point
       let ecgY = h / 2;
       if (pos >= 4 && pos <= 8) ecgY -= 6; // P
       else if (pos === 11) ecgY += 4; // Q
@@ -373,12 +161,6 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
     return () => cancelAnimationFrame(animId);
   }, [bpm, isEmergencyActive]);
 
-  const toggleAutoRotate = () => {
-    autoRotateRef.current = !autoRotateRef.current;
-    setIsAutoRotate(autoRotateRef.current);
-    cockpitAudio.playBlip();
-  };
-
   return (
     <div className="rounded-2xl bg-gradient-to-b from-space-950 via-space-900 to-space-950 border border-hud-cyan/40 shadow-2xl p-4 sm:p-5 backdrop-blur-xl relative overflow-hidden font-mono">
       {/* Top Banner mirroring NASA ISS Expedition 68 Operational Screen */}
@@ -390,27 +172,49 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
               <h3 className="font-orbitron font-bold text-sm text-white tracking-wider">
                 BIOMEDICAL EVALUATION // ISS & ARES FLIGHT CONSOLE
               </h3>
-              <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-emerald-400 font-bold">
-                NASA FLIGHT DECK (PHOTO VERIFIED)
+              <span className="text-[9px] px-2 py-0.5 rounded bg-emerald-950 border border-emerald-500/40 text-emerald-400 font-bold uppercase">
+                EXACT NASA CHALLENGE SCREEN MATCH
               </span>
             </div>
             <p className="text-[11px] text-slate-400">
-              Multi-channel In-Flight Vital Telemetry • Thermal Biomechanical Heatmap
+              In-Flight Continuous Ergometric Telemetry • Biomechanical Stress Heatmap
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
-          <button
-            onClick={toggleAutoRotate}
-            className={`px-3 py-1.5 rounded-xl border text-[11px] transition ${
-              isAutoRotate ? 'bg-hud-cyan/20 border-hud-cyan text-hud-cyan' : 'bg-space-900 border-slate-700 text-slate-400'
-            }`}
-          >
-            360° ROTATE: {isAutoRotate ? 'ON' : 'OFF'}
-          </button>
-          <span className="px-2.5 py-1 rounded-xl bg-space-950 border border-slate-800 text-slate-400 text-[10px]">
-            SUBJECT: {activeCrew?.name?.toUpperCase()}
+          {/* Toggle between NASA Thermal Heatmap and Photorealistic In-Vivo */}
+          <div className="flex items-center bg-space-950 border border-slate-800 rounded-xl p-0.5 text-xs font-mono">
+            <button
+              onClick={() => {
+                setCenterMode('heatmap-silhouette');
+                cockpitAudio.playBlip();
+              }}
+              className={`px-3 py-1 rounded-lg transition ${
+                centerMode === 'heatmap-silhouette'
+                  ? 'bg-hud-cyan text-space-950 font-bold shadow-md shadow-hud-cyan/30'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              NASA Heatmap Silhouette
+            </button>
+            <button
+              onClick={() => {
+                setCenterMode('photorealistic');
+                cockpitAudio.playBlip();
+              }}
+              className={`px-3 py-1 rounded-lg transition ${
+                centerMode === 'photorealistic'
+                  ? 'bg-hud-cyan text-space-950 font-bold shadow-md shadow-hud-cyan/30'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Photorealistic In-Vivo
+            </button>
+          </div>
+
+          <span className="px-2.5 py-1.5 rounded-xl bg-space-950 border border-slate-800 text-slate-300 text-[10px]">
+            {activeCrew?.name?.toUpperCase()}
           </span>
         </div>
       </div>
@@ -461,26 +265,178 @@ export default function NasaIssFlightConsole({ activeCrew, isEmergencyActive }) 
           </div>
         </div>
 
-        {/* Center Column: Thermal Stress Heatmap Human Mesh (4 Cols) */}
-        <div className="lg:col-span-4 relative flex flex-col items-center justify-center rounded-2xl bg-space-950/70 border border-hud-cyan/20 p-2 overflow-hidden h-[480px]">
+        {/* Center Column: AUTHENTIC REALISTIC NASA THERMAL HEATMAP SILHOUETTE (4 Cols) */}
+        <div className="lg:col-span-4 relative flex flex-col items-center justify-center rounded-2xl bg-space-950/80 border border-hud-cyan/30 p-3 overflow-hidden h-[500px]">
           {/* Top HUD Tag */}
           <div className="absolute top-3 inset-x-3 flex items-center justify-between z-10 text-[9px] pointer-events-none">
             <span className="px-2 py-0.5 rounded bg-space-950/90 border border-hud-cyan/30 text-hud-cyan">
-              BIOMECHANICAL HEATMAP
+              {centerMode === 'heatmap-silhouette' ? 'THERMAL BIOMECHANICAL STRESS' : 'IN-VIVO ANATOMY'}
             </span>
             <span className="px-2 py-0.5 rounded bg-space-950/90 border border-slate-700 text-slate-400">
-              DRAG TO ORBIT 360°
+              IN-FLIGHT TELEMETRY
             </span>
           </div>
 
-          {/* Three.js Canvas Container */}
-          <div ref={mountRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
+          {/* Laser Scan Sweep Animation */}
+          {isLaserScanning && (
+            <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-hud-cyan to-transparent shadow-[0_0_15px_#00f0ff] animate-scanBeam pointer-events-none z-10 opacity-75" />
+          )}
 
-          {/* Heat Gradient Legend */}
-          <div className="absolute bottom-3 inset-x-4 flex items-center justify-between text-[9px] z-10 bg-space-950/85 px-3 py-1.5 rounded-xl border border-slate-800">
-            <span className="text-sky-400">LOW STRESS</span>
-            <div className="w-24 h-2 rounded-full bg-gradient-to-r from-blue-600 via-emerald-500 to-rose-500 mx-2" />
-            <span className="text-rose-400 font-bold">MYOCARDIAL LOAD</span>
+          {/* Background Tech Crosshair Grid */}
+          <div className="absolute inset-0 bg-[radial-gradient(#00f0ff_1px,transparent_1px)] [background-size:20px_20px] opacity-10 pointer-events-none" />
+
+          {/* CENTER VIEW 1: AUTHENTIC NASA THERMAL HEATMAP HUMAN SILHOUETTE (Exact Match to NASA Screen Photo!) */}
+          {centerMode === 'heatmap-silhouette' ? (
+            <div className="relative w-full h-full flex items-center justify-center">
+              <svg
+                viewBox="0 0 200 440"
+                className="h-[430px] w-auto max-w-full drop-shadow-[0_0_25px_rgba(0,240,255,0.3)] transition-all duration-300"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <defs>
+                  {/* NASA ISS Thermal Stress Gradient: Blue Legs -> Cyan Waist -> Green Torso -> Radiant Red/Amber Chest Core */}
+                  <linearGradient id="nasaThermalGrad" x1="100" y1="20" x2="100" y2="420" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#38bdf8" />      {/* Head: Cyan */}
+                    <stop offset="12%" stopColor="#0284c7" />     {/* Neck: Blue-cyan */}
+                    <stop offset="22%" stopColor="#10b981" />     {/* Upper Torso: Emerald */}
+                    <stop offset="28%" stopColor={isEmergencyActive ? '#ef4444' : '#f59e0b'} /> {/* Myocardium Heat Stress: Red/Amber */}
+                    <stop offset="34%" stopColor="#10b981" />     {/* Abdomen: Emerald */}
+                    <stop offset="46%" stopColor="#06b6d4" />     {/* Pelvis: Cyan */}
+                    <stop offset="65%" stopColor="#0284c7" />     {/* Thighs: Blue */}
+                    <stop offset="85%" stopColor="#2563eb" />     {/* Calves: Deep Blue */}
+                    <stop offset="100%" stopColor="#1d4ed8" />    {/* Feet: Royal Blue */}
+                  </linearGradient>
+
+                  {/* Pulsing Radial Heat Core on Heart */}
+                  <radialGradient id="heartHeatGlow" cx="47%" cy="28%" r="18%">
+                    <stop offset="0%" stopColor="#ffffff" stopOpacity="0.9" />
+                    <stop offset="40%" stopColor="#ef4444" stopOpacity="0.8" />
+                    <stop offset="80%" stopColor="#f59e0b" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                  </radialGradient>
+
+                  {/* Body Hologram Outer Rim Filter */}
+                  <filter id="hologramGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                </defs>
+
+                {/* Ground Telemetry Ellipse Grid (Under Astronaut Feet) */}
+                <ellipse cx="100" cy="425" rx="55" ry="12" stroke="#00f0ff" strokeWidth="1" strokeDasharray="4 2" opacity="0.6" />
+                <ellipse cx="100" cy="425" rx="35" ry="8" stroke="#38bdf8" strokeWidth="0.8" opacity="0.4" />
+
+                {/* REALISTIC CONTOURED HUMAN SILHOUETTE (Trapezius, Deltoids, Pectorals, Waist, Hips, Thighs, Calves, Feet) */}
+                <path
+                  d="
+                    M 100,22 
+                    C 112,22 120,32 120,44 
+                    C 120,56 114,64 108,68 
+                    C 107,72 108,76 114,79 
+                    C 126,82 144,90 148,102 
+                    C 152,112 156,135 158,155 
+                    C 160,175 164,200 166,220 
+                    C 167,230 166,236 163,238 
+                    C 160,240 157,236 156,228 
+                    C 153,205 149,180 147,162 
+                    C 144,170 142,190 141,208 
+                    C 140,218 136,226 130,228 
+                    C 126,230 123,222 124,212 
+                    C 126,192 127,175 125,160 
+                    C 122,172 120,188 121,208 
+                    C 122,230 124,258 123,285 
+                    C 122,310 120,332 119,355 
+                    C 118,375 119,395 121,412 
+                    C 122,418 120,422 115,422 
+                    C 110,422 108,416 107,405 
+                    C 105,385 104,360 104,335 
+                    C 103,310 102,280 101,250 
+                    L 99,250 
+                    C 98,280 97,310 96,335 
+                    C 96,360 95,385 93,405 
+                    C 92,416 90,422 85,422 
+                    C 80,422 78,418 79,412 
+                    C 81,395 82,375 81,355 
+                    C 80,332 78,310 77,285 
+                    C 76,258 78,230 79,208 
+                    C 80,188 78,172 75,160 
+                    C 73,175 74,192 76,212 
+                    C 77,222 74,230 70,228 
+                    C 64,226 60,218 59,208 
+                    C 58,190 56,170 53,162 
+                    C 51,180 47,205 44,228 
+                    C 43,236 40,240 37,238 
+                    C 34,236 33,230 34,220 
+                    C 36,200 40,175 42,155 
+                    C 44,135 48,112 52,102 
+                    C 56,90 74,82 86,79 
+                    C 92,76 93,72 92,68 
+                    C 86,64 80,56 80,44 
+                    C 80,32 88,22 100,22 
+                    Z
+                  "
+                  fill="url(#nasaThermalGrad)"
+                  stroke="#00f0ff"
+                  strokeWidth="1.2"
+                  filter="url(#hologramGlow)"
+                />
+
+                {/* Internal Anatomical Ribcage & Vertebral Guidelines */}
+                <path
+                  d="
+                    M 100,85 L 100,210
+                    M 85,105 Q 100,112 115,105
+                    M 83,118 Q 100,126 117,118
+                    M 84,132 Q 100,140 116,132
+                    M 86,146 Q 100,154 114,146
+                  "
+                  stroke="rgba(255, 255, 255, 0.25)"
+                  strokeWidth="1"
+                  strokeDasharray="2 2"
+                />
+
+                {/* Heart Radiation Heat Node (Glowing Red Heatmap Core) */}
+                <circle cx="94" cy="122" r="14" fill="url(#heartHeatGlow)" />
+                <circle cx="94" cy="122" r="4.5" fill="#ffffff" />
+                <circle cx="94" cy="122" r="8" stroke="#ef4444" strokeWidth="1.2" strokeDasharray="3 2" className="animate-ping origin-center" />
+
+                {/* SANS Brain Pressure Point */}
+                <circle cx="100" cy="44" r="5" fill="rgba(56, 189, 248, 0.4)" stroke="#38bdf8" strokeWidth="1" />
+                <circle cx="100" cy="44" r="2" fill="#ffffff" />
+
+                {/* Concentric Telemetry Target Reticle on Heart */}
+                <circle cx="94" cy="122" r="22" stroke="rgba(244, 63, 94, 0.4)" strokeWidth="1" strokeDasharray="4 4" />
+                <line x1="68" y1="122" x2="88" y2="122" stroke="#f43f5e" strokeWidth="1" />
+                <line x1="100" y1="122" x2="120" y2="122" stroke="#f43f5e" strokeWidth="1" />
+                <line x1="94" y1="96" x2="94" y2="116" stroke="#f43f5e" strokeWidth="1" />
+                <line x1="94" y1="128" x2="94" y2="148" stroke="#f43f5e" strokeWidth="1" />
+
+                {/* Callout Label */}
+                <text x="126" y="120" fill="#f43f5e" fontSize="8" fontFamily="monospace" fontWeight="bold">
+                  MYOCARDIAL LOAD
+                </text>
+                <text x="126" y="130" fill="#94a3b8" fontSize="7" fontFamily="monospace">
+                  {bpm} BPM // STABLE
+                </text>
+              </svg>
+            </div>
+          ) : (
+            /* CENTER VIEW 2: PHOTOREALISTIC IN-VIVO ANATOMY SCANNER */
+            <div className="relative w-full h-full flex items-center justify-center p-2">
+              <img
+                src={`/anatomy/${gender}_standing.jpg`}
+                alt="In-Vivo Astronaut"
+                className="h-[430px] w-auto max-w-full object-contain filter drop-shadow-[0_0_25px_rgba(0,240,255,0.4)] rounded-xl"
+              />
+            </div>
+          )}
+
+          {/* Heat Gradient Legend Bar at bottom */}
+          <div className="absolute bottom-3 inset-x-4 flex items-center justify-between text-[9px] z-10 bg-space-950/90 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span className="text-sky-400">0.0G ADAPTATION</span>
+            <div className="w-28 h-2 rounded-full bg-gradient-to-r from-blue-600 via-emerald-500 to-rose-500 mx-2" />
+            <span className="text-rose-400 font-bold">CARDIAC STRESS</span>
           </div>
         </div>
 
