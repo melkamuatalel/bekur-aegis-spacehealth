@@ -76,7 +76,10 @@ export default function GeneralMedicalDossierModal({
     const a = document.createElement('a');
     a.href = url;
     a.download = `NASA_ARES_V_General_Flight_Medical_Dossier_Sol142.json`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 100);
   };
 
   return (

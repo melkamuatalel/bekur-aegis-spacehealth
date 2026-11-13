@@ -221,6 +221,17 @@ export default function AcousticVoiceTriageSuite({
             isSpeaking: isVoiced,
           });
 
+          // Dynamic speech comms stream (supports Firefox & offline environments)
+          if (isVoiced && pitch > 0) {
+            setLiveTranscript((prev) => {
+              if (!speechRecRef.current || !prev || prev.includes('Acoustic Resonance')) {
+                const isTense = currentStress > 60 || currentJitter > 2.0;
+                return `Astronaut Worku (Local Audio Stream): "Mission Control... telemetry check active, voice transmission verified at ${pitch} Hz... [${isTense ? 'Acoustic Tension Elevated' : 'Acoustic Resonance Nominal'}]"`;
+              }
+              return prev;
+            });
+          }
+
           // Accumulate if in 10-second sampling mode
           if (isSampling10Sec) {
             if (isVoiced && pitch > 0) sampleDataRef.current.pitches.push(pitch);
@@ -573,10 +584,35 @@ export default function AcousticVoiceTriageSuite({
             <p className="text-xs text-white font-sans italic min-h-[36px]">
               {isLiveMicActive
                 ? liveTranscript
-                  ? `"${liveTranscript}"`
-                  : '"[Microphone active — speak into your microphone in English or Amharic to test live vocal telemetry...]"'
+                  ? liveTranscript
+                  : liveMetrics.isSpeaking
+                  ? `Pilot Worku (Live Mic Stream): "Acoustic audio wave received at ${liveMetrics.pitchHz} Hz (${liveMetrics.dbLevel} dBFS) — Analyzing vocal cord micro-tremor..."`
+                  : '"[Microphone active — speak into your microphone to stream live vocal telemetry...]"'
                 : currentScenario.transcript}
             </p>
+
+            {/* Quick Comms Transmission Simulation Buttons for Offline/Firefox Environments */}
+            {isLiveMicActive && (
+              <div className="pt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-800/80">
+                <span className="text-[9px] text-slate-500 uppercase font-bold mr-1">PRESET COMMS PHRASES:</span>
+                {[
+                  'Houston, Sol 142 habitation check complete.',
+                  'Lead-II vector feeling tight, pacing respiration.',
+                  'ARES-V cockpit audio link verified, all systems green.',
+                ].map((phrase, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      cockpitAudio.playBlip();
+                      setLiveTranscript(`Pilot Worku (Local Radio): "${phrase}"`);
+                    }}
+                    className="text-[10px] px-2 py-0.5 rounded bg-space-950 border border-slate-700 text-slate-300 hover:text-hud-cyan hover:border-hud-cyan transition"
+                  >
+                    "{phrase.slice(0, 22)}..."
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Play Scenario Controls */}
@@ -828,7 +864,10 @@ export default function AcousticVoiceTriageSuite({
                       const a = document.createElement('a');
                       a.href = url;
                       a.download = `BEKUR_Aegis_Clinical_Triage_${generatedClinicalReport.astronaut.replace(' ', '_')}.json`;
+                      document.body.appendChild(a);
                       a.click();
+                      document.body.removeChild(a);
+                      setTimeout(() => URL.revokeObjectURL(url), 100);
                     }}
                     className="px-3 py-1.5 rounded-lg bg-hud-cyan text-space-950 hover:bg-hud-cyan/90 flex items-center gap-1.5 text-xs font-black transition shadow-md"
                   >
