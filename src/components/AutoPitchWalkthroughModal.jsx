@@ -24,19 +24,20 @@ export default function AutoPitchWalkthroughModal({ isOpen, onClose, onNavigate 
   const audioRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(74);
+  const [duration, setDuration] = useState(119);
   const [autoNavigate, setAutoNavigate] = useState(true);
   const [displayMode, setDisplayMode] = useState('expanded'); // 'expanded' | 'ticker' | 'hidden'
 
-  // Timeline Segments for Auto-Navigation
+  // Timeline Segments for Auto-Navigation (Strictly under 2-min NASA hard limit: 118.7s)
   const segments = [
-    { start: 0, end: 12, page: 'cockpit', label: '1. Mission Overview & Deep Space Crisis', text: 'Greetings NASA Space Apps Global Judges. I am presenting BEKUR-Aegis, an autonomous edge-AI health intelligence system engineered for deep-space transit to Mars on the ARES-V vehicle, over 78 million kilometers from Earth.' },
-    { start: 12, end: 24, page: 'cockpit', label: '2. Shared Squadron Cockpit Wall', text: 'Because radio communications lag up to 22 minutes one-way, Earth flight surgeons cannot intervene during acute emergencies. Compliant with NASA-STD-3001 and federal privacy regulations under 14 CFR 1213, BEKUR-Aegis introduces an aerospace-compliant dual-display architecture: a Shared Squadron Cockpit Deck for overall crew safety, and a private Biometric Crew Quarters Enclave secured by retinal scan.' },
-    { start: 24, end: 38, page: 'quarters', label: '3. In-Vivo Tomography & Clickable Organs', text: 'Inside private quarters, BEKUR-Aegis deploys gender-adaptive in-vivo photorealistic organ tomography matching real International Space Station flight consoles. Astronauts interact with physiological vectors across cardiovascular, optic, and musculoskeletal beds.' },
-    { start: 38, end: 50, page: 'quarters', label: '4. 72-Hour Prognostic Digital Twin', text: 'Our world-first 72-Hour Prognostic Digital Twin moves beyond reactive monitoring. It forward-simulates SANS optic swelling and cardiac deconditioning, pre-emptively deploying Lower-Body Negative Pressure and electrolyte countermeasures.' },
-    { start: 50, end: 60, page: 'genomics', label: '5. NASA GeneLab 3D DNA Radiation Suite', text: 'We also integrated the NASA GeneLab 3D Genomic Radiation suite to track cosmic ray double-strand DNA breaks and antioxidant repair kinetics.' },
-    { start: 60, end: 68, page: 'voice-triage', label: '6. Acoustic Voice Stress & Hypoxia', text: '...and an autonomous Acoustic Voice Stress Spectrometer that detects sub-clinical hypoxia 15 minutes before vital signs crash.' },
-    { start: 68, end: 75, page: 'ai-doctor', label: '7. Dr. BEKUR-AI & Earth Telemedicine Impact', text: 'Underpinning the mission is Dr. BEKUR-AI, validated with 96.4% diagnostic concordance against NASA historical flight data. Operating 100% offline on spacecraft avionics, BEKUR-Aegis protects astronauts on Mars, and powers remote rural telemedicine in Ethiopia. Thank you.' },
+    { start: 0.0, end: 16.7, page: 'cockpit', label: '1. Mission Overview & Deep Space Crisis', text: 'Greetings NASA Space Apps Global Judges. Presenting BEKUR-Aegis, autonomous edge-AI health intelligence for Mars transit on ARES-V, 78 million kilometers from Earth.' },
+    { start: 16.7, end: 33.6, page: 'cockpit', label: '2. Zero Earth Dependency & Cockpit Bridge', text: 'With 22-minute light-speed lag, Earth doctors cannot intervene. Under NASA-STD-3001, our shared cockpit continuously monitors squadron life-support with zero Earth dependency.' },
+    { start: 33.6, end: 47.6, page: 'quarters', label: '3. Private Quarters & 72-Hour Digital Twin', text: 'In private quarters under federal privacy enclaves, our 72-Hour Prognostic Digital Twin forward-simulates SANS and cardiac deconditioning before symptoms occur.' },
+    { start: 47.6, end: 61.6, page: 'genomics', label: '4. NASA GeneLab Genomic Radiation Suite', text: 'Using NASA GeneLab GLDS-242 data, our 3D genomic suite monitors cosmic ray DNA breaks and antioxidant repair kinetics in real time.' },
+    { start: 61.6, end: 73.8, page: 'voice-triage', label: '5. Acoustic Voice Stress & Hypoxia Triage', text: 'Our contactless acoustic voice stress spectrometer detects sub-clinical hypoxia 15 minutes before physical sensors, using microphone audio.' },
+    { start: 73.8, end: 86.7, page: 'ai-doctor', label: '6. Dr. BEKUR-AI Autonomous CMO', text: 'Dr. BEKUR-AI provides autonomous clinical guidance with 96.4 percent concordance against NASA logs, prescribing countermeasures offline.' },
+    { start: 86.7, end: 103.6, page: 'earth-roadmap', label: '7. Real-World Earth Spin-Off & Global Impact', text: 'Crucially, BEKUR-Aegis is engineered for Earth. Its offline edge AI brings specialist triage to rural clinics in Ethiopia, Antarctic research stations, and disaster zones without internet.' },
+    { start: 103.6, end: 118.7, page: 'earth-roadmap', label: '8. TRL Flight Roadmap & Future Vision', text: 'Advancing from laboratory TRL-4 to Artemis Gateway and Mars 2030s, BEKUR-Aegis protects astronauts in deep space, while saving lives on Earth. Thank you.' },
   ];
 
   const currentSegment = segments.find(

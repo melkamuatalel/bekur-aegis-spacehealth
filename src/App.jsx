@@ -10,6 +10,7 @@ import SquadronCockpitDeck from './components/SquadronCockpitDeck';
 import BiometricLoginGate from './components/BiometricLoginGate';
 import GenomicDnaRadiationSuite from './components/GenomicDnaRadiationSuite';
 import AcousticVoiceTriageSuite from './components/AcousticVoiceTriageSuite';
+import EarthImpactRoadmapSuite from './components/EarthImpactRoadmapSuite';
 import AutoPitchWalkthroughModal from './components/AutoPitchWalkthroughModal';
 import DataIntegrationModal from './components/DataIntegrationModal';
 import AIDoctorModal from './components/AIDoctorModal';
@@ -30,6 +31,7 @@ import {
   Shield,
   Dna,
   Mic,
+  Globe,
 } from 'lucide-react';
 import { cockpitAudio } from './utils/audioAlert';
 
@@ -44,10 +46,10 @@ export default function App() {
   const [isDataIntegrationOpen, setIsDataIntegrationOpen] = useState(false);
   const [isPitchWalkthroughOpen, setIsPitchWalkthroughOpen] = useState(false);
 
-  // Hash-based Full Page Router (#/cockpit, #/quarters, #/genomics, #/voice-triage, #/ai-doctor, #/comms-science, #/login)
+  // Hash-based Full Page Router (#/cockpit, #/quarters, #/genomics, #/voice-triage, #/ai-doctor, #/comms-science, #/earth-roadmap, #/login)
   const getInitialPage = () => {
     const hash = window.location.hash.replace('#/', '');
-    const validPages = ['cockpit', 'quarters', 'genomics', 'voice-triage', 'ai-doctor', 'comms-science', 'login'];
+    const validPages = ['cockpit', 'quarters', 'genomics', 'voice-triage', 'ai-doctor', 'comms-science', 'earth-roadmap', 'login'];
     return validPages.includes(hash) ? hash : 'cockpit';
   };
 
@@ -56,7 +58,7 @@ export default function App() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#/', '');
-      const validPages = ['cockpit', 'quarters', 'genomics', 'voice-triage', 'ai-doctor', 'comms-science', 'login'];
+      const validPages = ['cockpit', 'quarters', 'genomics', 'voice-triage', 'ai-doctor', 'comms-science', 'earth-roadmap', 'login'];
       if (validPages.includes(hash)) {
         setCurrentPage(hash);
       }
@@ -85,6 +87,7 @@ export default function App() {
     { id: 'genomics', label: 'Genomic DNA Radiation', icon: Dna, badge: 'NASA GeneLab' },
     { id: 'voice-triage', label: 'Voice Stress Analyzer', icon: Mic, badge: 'Acoustic FFT' },
     { id: 'ai-doctor', label: 'Dr. BEKUR-AI Clinic', icon: Bot, badge: '96.4% Accuracy' },
+    { id: 'earth-roadmap', label: 'Earth Impact & Roadmap', icon: Globe, badge: 'Dual-Use & TRL 7' },
     { id: 'comms-science', label: 'DSN Comms & Science', icon: Radio, badge: 'Deep Space' },
   ];
 
@@ -347,14 +350,19 @@ export default function App() {
           />
         )}
 
-        {/* 6. DEDICATED FULL-PAGE DSN COMMS & NASA EVIDENCE */}
+        {/* 6. DEDICATED FULL-PAGE EARTH IMPACT & TRL ROADMAP */}
+        {currentPage === 'earth-roadmap' && (
+          <EarthImpactRoadmapSuite />
+        )}
+
+        {/* 7. DEDICATED FULL-PAGE DSN COMMS & NASA EVIDENCE */}
         {currentPage === 'comms-science' && (
           <CommsScienceTab
             isEmergencyActive={isAnomalyActive}
           />
         )}
 
-        {/* 7. DEDICATED FULL-PAGE BIOMETRIC LOGIN ENCLAVE */}
+        {/* 8. DEDICATED FULL-PAGE BIOMETRIC LOGIN ENCLAVE */}
         {currentPage === 'login' && (
           <BiometricLoginGate
             crew={crew}
