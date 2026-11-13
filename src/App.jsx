@@ -80,15 +80,15 @@ export default function App() {
     setIsAnomalyActive((prev) => !prev);
   };
 
-  // Navigation Pages Definition
+  // Navigation Pages Definition (Optimized concise labels for 100% all-screen visibility with zero truncation)
   const NAV_PAGES = [
-    { id: 'cockpit', label: 'Squadron Cockpit Deck', icon: Tv, badge: 'Shared Bridge' },
-    { id: 'quarters', label: 'Private Crew Quarters', icon: Lock, badge: 'In-Vivo Suite' },
-    { id: 'genomics', label: 'Genomic DNA Radiation', icon: Dna, badge: 'NASA GeneLab' },
-    { id: 'voice-triage', label: 'Voice Stress Analyzer', icon: Mic, badge: 'Acoustic FFT' },
-    { id: 'ai-doctor', label: 'Dr. BEKUR-AI Clinic', icon: Bot, badge: '96.4% Accuracy' },
-    { id: 'earth-roadmap', label: 'Earth Impact & Roadmap', icon: Globe, badge: 'Dual-Use & TRL 7' },
-    { id: 'comms-science', label: 'DSN Comms & Science', icon: Radio, badge: 'Deep Space' },
+    { id: 'cockpit', label: 'Cockpit Deck', icon: Tv, badge: 'Shared Bridge' },
+    { id: 'quarters', label: 'Crew Quarters', icon: Lock, badge: 'In-Vivo Suite' },
+    { id: 'genomics', label: 'DNA Radiation', icon: Dna, badge: 'NASA GeneLab' },
+    { id: 'voice-triage', label: 'Voice Triage', icon: Mic, badge: 'Acoustic FFT' },
+    { id: 'ai-doctor', label: 'Dr. BEKUR-AI', icon: Bot, badge: '96.4% Accuracy' },
+    { id: 'earth-roadmap', label: 'Earth & Roadmap', icon: Globe, badge: 'Dual-Use & TRL 7' },
+    { id: 'comms-science', label: 'DSN Comms', icon: Radio, badge: 'Deep Space' },
   ];
 
   // Sub-tabs inside Crew Quarters
@@ -101,7 +101,7 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen p-3 sm:p-5 lg:p-8 max-w-7xl mx-auto flex flex-col justify-between selection:bg-hud-cyan selection:text-space-950">
+    <div className="min-h-screen p-2.5 sm:p-4 lg:p-6 w-full max-w-[1720px] mx-auto flex flex-col justify-between selection:bg-hud-cyan selection:text-space-950">
       <div className="space-y-6">
         {/* Master Mission Header */}
         <MissionHeader
@@ -136,8 +136,8 @@ export default function App() {
           </div>
         )}
 
-        {/* TOP-LEVEL ENTERPRISE NAVIGATION HUB (Multi-Page Aerospace Navigation) */}
-        <div className="p-1.5 rounded-2xl bg-space-900/90 border border-hud-cyan/30 shadow-2xl backdrop-blur-xl flex items-center gap-1.5 overflow-x-auto font-mono">
+        {/* TOP-LEVEL ENTERPRISE NAVIGATION HUB (All-Screen Full-Width Responsive Navigation) */}
+        <nav aria-label="Aerospace Navigation Deck" className="p-1 sm:p-1.5 rounded-2xl bg-space-900/90 border border-hud-cyan/30 shadow-2xl backdrop-blur-xl flex items-center gap-1 sm:gap-1.5 overflow-x-auto font-mono scrollbar-none">
           {NAV_PAGES.map((page) => {
             const Icon = page.icon;
             const isCurrent = currentPage === page.id;
@@ -145,17 +145,17 @@ export default function App() {
               <button
                 key={page.id}
                 onClick={() => navigateTo(page.id)}
-                className={`flex-1 min-w-[170px] flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl font-orbitron text-xs font-bold tracking-wider transition-all ${
+                className={`flex-1 shrink-0 md:shrink flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-2.5 rounded-xl font-orbitron text-[11px] sm:text-xs font-bold tracking-wider transition-all whitespace-nowrap ${
                   isCurrent
                     ? 'bg-hud-cyan text-space-950 shadow-lg shadow-hud-cyan/30 scale-[1.01]'
                     : 'text-slate-400 hover:text-white hover:bg-space-800/60'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isCurrent ? 'text-space-950' : 'text-hud-cyan'}`} />
-                <span className="truncate">{page.label}</span>
+                <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${isCurrent ? 'text-space-950' : 'text-hud-cyan'}`} />
+                <span className="whitespace-nowrap font-bold">{page.label}</span>
                 <span
                   className={`text-[8px] font-mono px-1.5 py-0.5 rounded uppercase hidden xl:inline-block ${
-                    isCurrent ? 'bg-space-950/20 text-space-950' : 'bg-space-950 text-slate-400 border border-slate-800'
+                    isCurrent ? 'bg-space-950/20 text-space-950 font-bold' : 'bg-space-950 text-slate-400 border border-slate-800'
                   }`}
                 >
                   {page.badge}
@@ -163,7 +163,7 @@ export default function App() {
               </button>
             );
           })}
-        </div>
+        </nav>
 
         {/* ================= PAGE ROUTING VIEWPORTS ================= */}
 
@@ -261,7 +261,7 @@ export default function App() {
                           setActiveQuarterTab(tab.id);
                           cockpitAudio.playBlip();
                         }}
-                        className={`flex-1 min-w-[190px] flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl font-orbitron text-xs font-bold tracking-wider transition-all ${
+                        className={`flex-1 shrink-0 flex items-center justify-center gap-2 px-3.5 py-3 rounded-xl font-orbitron text-xs font-bold tracking-wider transition-all whitespace-nowrap ${
                           isActive
                             ? 'bg-hud-cyan text-space-950 shadow-lg shadow-hud-cyan/30 scale-[1.01]'
                             : 'text-slate-400 hover:text-white hover:bg-space-800/60'
