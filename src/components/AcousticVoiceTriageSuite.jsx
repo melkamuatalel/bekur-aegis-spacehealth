@@ -16,6 +16,8 @@ import {
   X,
   CheckCircle2,
   HeartPulse,
+  Camera,
+  FileText,
 } from 'lucide-react';
 import { cockpitAudio } from '../utils/audioAlert';
 
@@ -76,7 +78,12 @@ function calculateJitterPercent(pitchHistory) {
   return Math.min(Math.max(parseFloat(jitterVal.toFixed(2)), 0.45), 5.8);
 }
 
-export default function AcousticVoiceTriageSuite({ activeCrew, isEmergencyActive }) {
+export default function AcousticVoiceTriageSuite({
+  activeCrew,
+  isEmergencyActive,
+  onOpenMedicalDossier,
+  onOpenRPPG,
+}) {
   const canvasRef = useRef(null);
   const [selectedScenario, setSelectedScenario] = useState('abebe-eva');
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
@@ -433,6 +440,36 @@ export default function AcousticVoiceTriageSuite({ activeCrew, isEmergencyActive
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* General Mission Medical Dossier Button */}
+          {onOpenMedicalDossier && (
+            <button
+              onClick={() => {
+                cockpitAudio.playBlip();
+                onOpenMedicalDossier();
+              }}
+              className="px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-space-950 border border-slate-700 text-slate-200 hover:text-white hover:border-hud-cyan shadow-md"
+              title="Open Unified NASA Mission Medical Dossier"
+            >
+              <FileText className="w-4 h-4 text-hud-cyan" />
+              <span>FULL MISSION DOSSIER</span>
+            </button>
+          )}
+
+          {/* Contactless Camera rPPG Shortcut Button */}
+          {onOpenRPPG && (
+            <button
+              onClick={() => {
+                cockpitAudio.playBlip();
+                onOpenRPPG();
+              }}
+              className="px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-space-950 border border-emerald-500/40 text-emerald-400 hover:border-emerald-400 shadow-md"
+              title="Scan Vitals via Camera rPPG"
+            >
+              <Camera className="w-4 h-4 text-emerald-400" />
+              <span>CAMERA rPPG</span>
+            </button>
+          )}
+
           {/* 10-Second Live Clinical Triage Button */}
           <button
             onClick={handleStart10SecTriage}

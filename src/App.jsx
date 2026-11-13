@@ -15,6 +15,8 @@ import AutoPitchWalkthroughModal from './components/AutoPitchWalkthroughModal';
 import DataIntegrationModal from './components/DataIntegrationModal';
 import AIDoctorModal from './components/AIDoctorModal';
 import NasaRiskDrawer from './components/NasaRiskDrawer';
+import OpticalRPPGScannerModal from './components/OpticalRPPGScannerModal';
+import GeneralMedicalDossierModal from './components/GeneralMedicalDossierModal';
 import { CREW_MEMBERS } from './data/nasaHealthData';
 import {
   ShieldAlert,
@@ -45,6 +47,8 @@ export default function App() {
   const [isNasaRiskOpen, setIsNasaRiskOpen] = useState(false);
   const [isDataIntegrationOpen, setIsDataIntegrationOpen] = useState(false);
   const [isPitchWalkthroughOpen, setIsPitchWalkthroughOpen] = useState(false);
+  const [isRPPGOpen, setIsRPPGOpen] = useState(false);
+  const [isMedicalDossierOpen, setIsMedicalDossierOpen] = useState(false);
 
   // Hash-based Full Page Router: Default to NASA Biometric Security Gate ('login') for authentic aerospace privacy
   const getInitialPage = () => {
@@ -133,6 +137,8 @@ export default function App() {
           onOpenNasaEvidence={() => navigateTo('comms-science')}
           onOpenDataIntegration={() => setIsDataIntegrationOpen(true)}
           onOpenPitchWalkthrough={() => setIsPitchWalkthroughOpen(true)}
+          onOpenRPPG={() => setIsRPPGOpen(true)}
+          onOpenMedicalDossier={() => setIsMedicalDossierOpen(true)}
         />
 
         {/* Emergency Alert Banner (visible when Anomaly is triggered) */}
@@ -360,6 +366,8 @@ export default function App() {
           <AcousticVoiceTriageSuite
             activeCrew={activeCrew}
             isEmergencyActive={isAnomalyActive}
+            onOpenMedicalDossier={() => setIsMedicalDossierOpen(true)}
+            onOpenRPPG={() => setIsRPPGOpen(true)}
           />
         )}
 
@@ -417,6 +425,19 @@ export default function App() {
       <NasaRiskDrawer
         isOpen={isNasaRiskOpen}
         onClose={() => setIsNasaRiskOpen(false)}
+      />
+      <OpticalRPPGScannerModal
+        isOpen={isRPPGOpen}
+        onClose={() => setIsRPPGOpen(false)}
+        activeCrew={activeCrew}
+        onApplyPulse={handleApplyCustomTelemetry}
+      />
+      <GeneralMedicalDossierModal
+        isOpen={isMedicalDossierOpen}
+        onClose={() => setIsMedicalDossierOpen(false)}
+        crew={crew}
+        activeCrew={activeCrew}
+        isEmergencyActive={isAnomalyActive}
       />
     </div>
   );
