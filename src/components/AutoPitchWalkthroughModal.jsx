@@ -30,14 +30,15 @@ export default function AutoPitchWalkthroughModal({ isOpen, onClose, onNavigate 
 
   // Timeline Segments for Auto-Navigation (Strictly under 2-min NASA hard limit: 118.7s)
   const segments = [
-    { start: 0.0, end: 16.7, page: 'cockpit', label: '1. Mission Overview & Deep Space Crisis', text: 'Greetings NASA Space Apps Global Judges. Presenting BEKUR-Aegis, autonomous edge-AI health intelligence for Mars transit on ARES-V, 78 million kilometers from Earth.' },
-    { start: 16.7, end: 33.6, page: 'cockpit', label: '2. Zero Earth Dependency & Cockpit Bridge', text: 'With 22-minute light-speed lag, Earth doctors cannot intervene. Under NASA-STD-3001, our shared cockpit continuously monitors squadron life-support with zero Earth dependency.' },
-    { start: 33.6, end: 47.6, page: 'quarters', label: '3. Private Quarters & 72-Hour Digital Twin', text: 'In private quarters under federal privacy enclaves, our 72-Hour Prognostic Digital Twin forward-simulates SANS and cardiac deconditioning before symptoms occur.' },
-    { start: 47.6, end: 61.6, page: 'genomics', label: '4. NASA GeneLab Genomic Radiation Suite', text: 'Using NASA GeneLab GLDS-242 data, our 3D genomic suite monitors cosmic ray DNA breaks and antioxidant repair kinetics in real time.' },
-    { start: 61.6, end: 73.8, page: 'voice-triage', label: '5. Acoustic Voice Stress & Hypoxia Triage', text: 'Our contactless acoustic voice stress spectrometer detects sub-clinical hypoxia 15 minutes before physical sensors, using microphone audio.' },
-    { start: 73.8, end: 86.7, page: 'ai-doctor', label: '6. Dr. BEKUR-AI Autonomous CMO', text: 'Dr. BEKUR-AI provides autonomous clinical guidance with 96.4 percent concordance against NASA logs, prescribing countermeasures offline.' },
-    { start: 86.7, end: 103.6, page: 'earth-roadmap', label: '7. Real-World Earth Spin-Off & Global Impact', text: 'Crucially, BEKUR-Aegis is engineered for Earth. Its offline edge AI brings specialist triage to rural clinics in Ethiopia, Antarctic research stations, and disaster zones without internet.' },
-    { start: 103.6, end: 118.7, page: 'earth-roadmap', label: '8. TRL Flight Roadmap & Future Vision', text: 'Advancing from laboratory TRL-4 to Artemis Gateway and Mars 2030s, BEKUR-Aegis protects astronauts in deep space, while saving lives on Earth. Thank you.' },
+    { start: 0.0, end: 4.5, page: 'login', label: '1. NASA Biometric Clearance', text: 'Greetings NASA Space Apps Global Judges. Presenting BEKUR-Aegis, secured by 14 CFR § 1213...' },
+    { start: 4.5, end: 16.7, page: 'cockpit', label: '2. Mission Overview & Deep Space Crisis', text: '...autonomous edge-AI health intelligence for Mars transit on ARES-V, 78 million kilometers from Earth.' },
+    { start: 16.7, end: 33.6, page: 'cockpit', label: '3. Zero Earth Dependency & Cockpit Bridge', text: 'With 22-minute light-speed lag, Earth doctors cannot intervene. Under NASA-STD-3001, our shared cockpit continuously monitors squadron life-support with zero Earth dependency.' },
+    { start: 33.6, end: 47.6, page: 'quarters', label: '4. Private Quarters & 72-Hour Digital Twin', text: 'In private quarters under federal privacy enclaves, our 72-Hour Prognostic Digital Twin forward-simulates SANS and cardiac deconditioning before symptoms occur.' },
+    { start: 47.6, end: 61.6, page: 'genomics', label: '5. NASA GeneLab Genomic Radiation Suite', text: 'Using NASA GeneLab GLDS-242 data, our 3D genomic suite monitors cosmic ray DNA breaks and antioxidant repair kinetics in real time.' },
+    { start: 61.6, end: 73.8, page: 'voice-triage', label: '6. Acoustic Voice Stress & Hypoxia Triage', text: 'Our contactless acoustic voice stress spectrometer detects sub-clinical hypoxia 15 minutes before physical sensors, using microphone audio.' },
+    { start: 73.8, end: 86.7, page: 'ai-doctor', label: '7. Dr. BEKUR-AI Autonomous CMO', text: 'Dr. BEKUR-AI provides autonomous clinical guidance with 96.4 percent concordance against NASA logs, prescribing countermeasures offline.' },
+    { start: 86.7, end: 103.6, page: 'earth-roadmap', label: '8. Real-World Earth Spin-Off & Global Impact', text: 'Crucially, BEKUR-Aegis is engineered for Earth. Its offline edge AI brings specialist triage to rural clinics in Ethiopia, Antarctic research stations, and disaster zones without internet.' },
+    { start: 103.6, end: 118.7, page: 'earth-roadmap', label: '9. TRL Flight Roadmap & Future Vision', text: 'Advancing from laboratory TRL-4 to Artemis Gateway and Mars 2030s, BEKUR-Aegis protects astronauts in deep space, while saving lives on Earth. Thank you.' },
   ];
 
   const currentSegment = segments.find(

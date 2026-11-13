@@ -46,11 +46,11 @@ export default function App() {
   const [isDataIntegrationOpen, setIsDataIntegrationOpen] = useState(false);
   const [isPitchWalkthroughOpen, setIsPitchWalkthroughOpen] = useState(false);
 
-  // Hash-based Full Page Router (#/cockpit, #/quarters, #/genomics, #/voice-triage, #/ai-doctor, #/comms-science, #/earth-roadmap, #/login)
+  // Hash-based Full Page Router: Default to NASA Biometric Security Gate ('login') for authentic aerospace privacy
   const getInitialPage = () => {
     const hash = window.location.hash.replace('#/', '');
     const validPages = ['cockpit', 'quarters', 'genomics', 'voice-triage', 'ai-doctor', 'comms-science', 'earth-roadmap', 'login'];
-    return validPages.includes(hash) ? hash : 'cockpit';
+    return validPages.includes(hash) ? hash : 'login';
   };
 
   const [currentPage, setCurrentPage] = useState(getInitialPage);
@@ -369,7 +369,7 @@ export default function App() {
             onAuthenticate={(id) => {
               setAuthenticatedCrewId(id);
               setActiveCrewId(id);
-              navigateTo('quarters');
+              navigateTo('cockpit');
             }}
           />
         )}
