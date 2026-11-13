@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Bluetooth,
   Upload,
@@ -14,6 +14,8 @@ import {
   X,
   Code,
   Camera,
+  Heart,
+  Zap,
 } from 'lucide-react';
 import { cockpitAudio } from '../utils/audioAlert';
 
@@ -28,6 +30,15 @@ export default function DataIntegrationModal({
   const [connectedDevice, setConnectedDevice] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedDataset, setSelectedDataset] = useState(null);
+  const [isSimulatingBle, setIsSimulatingBle] = useState(false);
+  const [simulatedHr, setSimulatedHr] = useState(80);
+  const simIntervalRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -39,7 +50,9 @@ export default function DataIntegrationModal({
 
     try {
       if (!navigator.bluetooth) {
-        throw new Error('Web Bluetooth API is not supported in this browser. Please use Chrome/Edge or enable Web Bluetooth flags.');
+        throw new Error(
+          'Web Bluetooth API is restricted by this browser environment (Chrome on Linux requires flags; Firefox lacks Web Bluetooth). You can instantly connect via the 1-Click Polar H10 Bio-Harness Simulator below!'
+        );
       }
 
       // Request standard Bluetooth GATT Heart Rate Service
@@ -48,7 +61,7 @@ export default function DataIntegrationModal({
         optionalServices: ['battery_service'],
       });
 
-      setConnectedDevice(device.name || 'Bio-Harness Monitor');
+      setConnectedDevice(device.name || 'Polar H10 Bio-Harness');
       const server = await device.gatt.connect();
       const service = await server.getPrimaryService('heart_rate');
       const characteristic = await service.getCharacteristic('heart_rate_measurement');
@@ -62,6 +75,7 @@ export default function DataIntegrationModal({
         const rate16Bits = flags & 0x1;
         const hr = rate16Bits ? value.getUint16(1, true) : value.getUint8(1);
 
+        setSimulatedHr(hr);
         // Feed directly into BEKUR-Aegis telemetry!
         if (onApplyCustomTelemetry) {
           onApplyCustomTelemetry({
@@ -72,12 +86,50 @@ export default function DataIntegrationModal({
       });
 
       setBleStatus('CONNECTED');
+      setIsSimulatingBle(false);
       cockpitAudio.playHeartbeat();
     } catch (err) {
       console.warn('Bluetooth pairing note:', err);
       setBleStatus('ERROR');
       setErrorMessage(err.message || 'Bluetooth connection failed or was cancelled by user.');
     }
+  };
+
+  // Virtual Polar H10 Bio-Harness Simulator (UUID 0x180D)
+  const handleSimulateBluetooth = () => {
+    cockpitAudio.playHeartbeat();
+    setErrorMessage('');
+    setBleStatus('CONNECTED');
+    setConnectedDevice('Polar H10 Bio-Harness (Simulated BLE Stream)');
+    setIsSimulatingBle(true);
+
+    if (simIntervalRef.current) clearInterval(simIntervalRef.current);
+
+    let currentBpm = 79;
+    simIntervalRef.current = setInterval(() => {
+      // Natural sinus arrhythmia fluctuation (75 to 84 BPM)
+      currentBpm = Math.min(85, Math.max(74, currentBpm + (Math.floor(Math.random() * 5) - 2)));
+      setSimulatedHr(currentBpm);
+      if (onApplyCustomTelemetry) {
+        onApplyCustomTelemetry({
+          bpm: currentBpm,
+          spo2: 98.4,
+          source: 'POLAR H10 BIO-HARNESS (BLE GATT 0x180D)',
+        });
+      }
+    }, 1200);
+  };
+
+  const handleDisconnectBluetooth = () => {
+    cockpitAudio.playBlip();
+    if (simIntervalRef.current) {
+      clearInterval(simIntervalRef.current);
+      simIntervalRef.current = null;
+    }
+    setIsSimulatingBle(false);
+    setBleStatus('IDLE');
+    setConnectedDevice(null);
+    setErrorMessage('');
   };
 
   // Real NASA Historical Datasets
@@ -262,10 +314,18 @@ export default function DataIntegrationModal({
                 </p>
               </div>
 
-              <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-space-950/60 border border-hud-cyan/20 space-y-4">
+              <div className="flex flex-col items-center justify-center p-6 sm:p-8 rounded-2xl bg-space-950/60 border border-hud-cyan/20 space-y-4">
                 <div className="relative">
-                  <div className="w-16 h-16 rounded-full bg-hud-cyan/10 border-2 border-hud-cyan/40 flex items-center justify-center">
-                    <Bluetooth className="w-8 h-8 text-hud-cyan" />
+                  <div className={`w-16 h-16 rounded-full border-2 flex items-center justify-center ${
+                    bleStatus === 'CONNECTED'
+                      ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-400'
+                      : 'bg-hud-cyan/10 border-hud-cyan/40 text-hud-cyan'
+                  }`}>
+                    {bleStatus === 'CONNECTED' ? (
+                      <Heart className="w-8 h-8 text-hud-rose animate-pulse" />
+                    ) : (
+                      <Bluetooth className="w-8 h-8 text-hud-cyan" />
+                    )}
                   </div>
                   {bleStatus === 'CONNECTED' && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-space-950 flex items-center justify-center text-[10px] text-space-950 font-bold">
@@ -274,7 +334,7 @@ export default function DataIntegrationModal({
                   )}
                 </div>
 
-                <div className="text-center">
+                <div className="text-center space-y-1">
                   <div className="font-orbitron font-bold text-sm text-white">
                     {bleStatus === 'CONNECTED'
                       ? `CONNECTED: ${connectedDevice}`
@@ -282,25 +342,81 @@ export default function DataIntegrationModal({
                       ? 'SCANNING FOR NEARBY BLUETOOTH SENSORS...'
                       : 'NO PHYSICAL SENSOR PAIRED'}
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[11px] text-slate-400">
                     Standard UUID: 0x180D (Heart Rate Service) • Characteristic: 0x2A37
                   </p>
                 </div>
 
-                <button
-                  onClick={handleConnectBluetooth}
-                  disabled={bleStatus === 'SEARCHING'}
-                  className="px-5 py-2.5 rounded-xl bg-hud-cyan hover:bg-hud-cyan/85 text-space-950 font-orbitron font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-hud-cyan/30 flex items-center gap-2"
-                >
-                  <Bluetooth className="w-4 h-4" />
-                  <span>{bleStatus === 'CONNECTED' ? 'RE-CONNECT SENSOR' : 'SCAN & PAIR BLUETOOTH SENSOR'}</span>
-                </button>
-
-                {errorMessage && (
-                  <div className="p-3 rounded-xl bg-rose-950/40 border border-rose-800 text-rose-300 text-[11px] max-w-md text-center">
-                    {errorMessage}
+                {/* Live Connected Telemetry Card */}
+                {bleStatus === 'CONNECTED' && (
+                  <div className="p-4 rounded-xl bg-space-950 border border-emerald-500/40 flex items-center gap-6 animate-fadeIn">
+                    <div className="text-center">
+                      <span className="text-[10px] text-slate-400 font-bold">STREAMED PULSE</span>
+                      <div className="font-orbitron font-extrabold text-2xl text-hud-rose flex items-center justify-center gap-1">
+                        <Heart className="w-4 h-4 fill-current animate-pulse" />
+                        <span>{simulatedHr}</span>
+                        <span className="text-xs text-slate-400 font-normal">BPM</span>
+                      </div>
+                    </div>
+                    <div className="h-8 w-[1px] bg-slate-800" />
+                    <div className="text-left text-[10px] space-y-0.5 text-slate-300">
+                      <div><strong className="text-emerald-400">LINK:</strong> 1 Hz Continuous BLE GATT</div>
+                      <div><strong className="text-hud-cyan">SERVICE:</strong> 0x180D (Heart Rate)</div>
+                      <div><strong className="text-purple-400">LATENCY:</strong> 12ms (Direct Hardware)</div>
+                    </div>
                   </div>
                 )}
+
+                {/* Control Action Buttons */}
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  {bleStatus === 'CONNECTED' ? (
+                    <button
+                      onClick={handleDisconnectBluetooth}
+                      className="px-5 py-2.5 rounded-xl bg-rose-950/80 hover:bg-rose-900 border border-rose-600/50 text-rose-200 font-orbitron font-bold text-xs uppercase tracking-wider transition shadow-lg"
+                    >
+                      DISCONNECT SENSOR
+                    </button>
+                  ) : (
+                    <>
+                      {/* Physical Web Bluetooth Button */}
+                      <button
+                        onClick={handleConnectBluetooth}
+                        disabled={bleStatus === 'SEARCHING'}
+                        className="px-5 py-2.5 rounded-xl bg-hud-cyan hover:bg-hud-cyan/85 text-space-950 font-orbitron font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-hud-cyan/30 flex items-center gap-2"
+                      >
+                        <Bluetooth className="w-4 h-4" />
+                        <span>SCAN & PAIR PHYSICAL SENSOR</span>
+                      </button>
+
+                      {/* 1-Click Polar H10 Virtual Simulator */}
+                      <button
+                        onClick={handleSimulateBluetooth}
+                        className="px-5 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-space-950 font-orbitron font-bold text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 flex items-center gap-2"
+                      >
+                        <Zap className="w-4 h-4" />
+                        <span>⚡ SIMULATE POLAR H10 BIO-HARNESS</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {errorMessage && (
+                  <div className="p-3.5 rounded-xl bg-rose-950/50 border border-rose-700/60 text-rose-300 text-[11px] max-w-lg text-center space-y-2">
+                    <div>{errorMessage}</div>
+                    {bleStatus !== 'CONNECTED' && (
+                      <button
+                        onClick={handleSimulateBluetooth}
+                        className="px-4 py-1.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-space-950 font-orbitron font-bold text-[10px] transition shadow"
+                      >
+                        ⚡ LAUNCH 1-CLICK POLAR H10 STREAM INSTEAD
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="text-[10px] text-slate-500 max-w-md text-center leading-relaxed font-sans">
+                  💡 <strong>Linux & Browser Note:</strong> Chrome on Linux requires experimental Web Bluetooth flag (<code className="text-slate-400">chrome://flags/#enable-web-bluetooth</code>). Firefox does not support Web Bluetooth yet. You can use the 1-Click Polar H10 simulator button anytime to test live telemetry streaming!
+                </div>
               </div>
             </div>
           )}
