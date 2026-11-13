@@ -3,7 +3,12 @@ import ThreeAIAvatar from './ThreeAIAvatar';
 import { Bot, Send, ShieldAlert, Sparkles, AlertTriangle, FileText, CheckCircle2, RefreshCw } from 'lucide-react';
 import { cockpitAudio } from '../utils/audioAlert';
 
-export default function DrBekurAITab({ activeCrew, isEmergencyActive, onTriggerEmergency }) {
+export default function DrBekurAITab({
+  activeCrew,
+  isEmergencyActive,
+  onTriggerEmergency,
+  onOpenMedicalDossier,
+}) {
   const [messages, setMessages] = useState([
     {
       sender: 'ai',
@@ -119,6 +124,20 @@ export default function DrBekurAITab({ activeCrew, isEmergencyActive, onTriggerE
         </div>
 
         <div className="flex items-center gap-2 font-mono text-xs">
+          {onOpenMedicalDossier && (
+            <button
+              onClick={() => {
+                cockpitAudio.playBlip();
+                onOpenMedicalDossier();
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-space-950 border border-slate-700 hover:border-hud-cyan text-slate-200 hover:text-white font-orbitron font-bold text-xs flex items-center gap-1.5 transition shadow-md"
+              title="Open Official NASA Flight Medical Dossier"
+            >
+              <FileText className="w-3.5 h-3.5 text-hud-cyan" />
+              <span>OFFICIAL MEDICAL DOSSIER</span>
+            </button>
+          )}
+
           <span className="px-3 py-1 rounded-full bg-emerald-950 border border-emerald-500/40 text-emerald-400 font-bold flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             100% OFFLINE EDGE AVIONICS

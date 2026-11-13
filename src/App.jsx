@@ -377,6 +377,7 @@ export default function App() {
             activeCrew={activeCrew}
             isEmergencyActive={isAnomalyActive}
             onTriggerEmergency={handleToggleAnomaly}
+            onOpenMedicalDossier={() => setIsMedicalDossierOpen(true)}
           />
         )}
 
@@ -415,6 +416,7 @@ export default function App() {
         isOpen={isDataIntegrationOpen}
         onClose={() => setIsDataIntegrationOpen(false)}
         onApplyCustomTelemetry={handleApplyCustomTelemetry}
+        onOpenRPPG={() => setIsRPPGOpen(true)}
       />
       <AIDoctorModal
         isOpen={isAIDocOpen}

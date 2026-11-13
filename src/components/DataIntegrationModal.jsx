@@ -13,11 +13,17 @@ import {
   RefreshCw,
   X,
   Code,
+  Camera,
 } from 'lucide-react';
 import { cockpitAudio } from '../utils/audioAlert';
 
-export default function DataIntegrationModal({ isOpen, onClose, onApplyCustomTelemetry }) {
-  const [activeTab, setActiveTab] = useState('bluetooth'); // 'bluetooth' | 'nasa-datasets' | 'upload' | 'api'
+export default function DataIntegrationModal({
+  isOpen,
+  onClose,
+  onApplyCustomTelemetry,
+  onOpenRPPG,
+}) {
+  const [activeTab, setActiveTab] = useState('rppg'); // 'rppg' | 'bluetooth' | 'nasa-datasets' | 'upload' | 'api'
   const [bleStatus, setBleStatus] = useState('IDLE'); // 'IDLE' | 'SEARCHING' | 'CONNECTED' | 'ERROR'
   const [connectedDevice, setConnectedDevice] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
@@ -174,10 +180,11 @@ export default function DataIntegrationModal({ isOpen, onClose, onApplyCustomTel
         {/* Integration Mode Tabs */}
         <div className="flex items-center border-b border-slate-800 bg-space-950/50 p-2 gap-2 overflow-x-auto text-xs font-mono">
           {[
-            { id: 'bluetooth', label: '1. Web Bluetooth BLE (Wearables)', icon: Bluetooth },
-            { id: 'nasa-datasets', label: '2. Real NASA Space Datasets', icon: Database },
-            { id: 'upload', label: '3. Custom File Upload (CSV/JSON)', icon: Upload },
-            { id: 'api', label: '4. Spacecraft Bus API (CCSDS)', icon: Code },
+            { id: 'rppg', label: '1. Contactless Camera rPPG', icon: Camera },
+            { id: 'bluetooth', label: '2. Web Bluetooth BLE (Wearables)', icon: Bluetooth },
+            { id: 'nasa-datasets', label: '3. Real NASA Space Datasets', icon: Database },
+            { id: 'upload', label: '4. Custom File Upload (CSV/JSON)', icon: Upload },
+            { id: 'api', label: '5. Spacecraft Bus API (CCSDS)', icon: Code },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -203,6 +210,45 @@ export default function DataIntegrationModal({ isOpen, onClose, onApplyCustomTel
 
         {/* Modal Content Body */}
         <div className="p-5 sm:p-6 overflow-y-auto space-y-4 flex-1 font-mono text-xs text-slate-300">
+          {/* TAB 0: CONTACTLESS CAMERA rPPG */}
+          {activeTab === 'rppg' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-xl bg-space-950 border border-slate-800 space-y-2">
+                <span className="font-orbitron font-bold text-white text-xs flex items-center gap-2">
+                  <Camera className="w-4 h-4 text-emerald-400" />
+                  OPTICAL REMOTE PHOTOPLETHYSMOGRAPHY (rPPG)
+                </span>
+                <p className="text-slate-400 leading-relaxed">
+                  Measures facial microvascular capillary blood absorption without physical wires. Oxygenated hemoglobin (HbO2) strongly absorbs green light (530 nm), allowing ambient camera streams to silently infer pulsatile hemodynamics with ±2.1 BPM clinical accuracy.
+                </p>
+              </div>
+
+              <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-space-950/60 border border-emerald-500/30 space-y-4 text-center">
+                <div className="w-16 h-16 rounded-full bg-emerald-950/40 border-2 border-emerald-500/50 flex items-center justify-center">
+                  <Camera className="w-8 h-8 text-emerald-400 animate-pulse" />
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-orbitron font-bold text-white text-sm">
+                    ZERO-CONTACT OPTICAL FACE SCANNER
+                  </h4>
+                  <p className="text-xs text-slate-400 max-w-md font-sans">
+                    Locks onto your face via webcam, tracks microvascular green-channel reflection, and synchronizes real optical pulse to the cockpit.
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    cockpitAudio.playBlip();
+                    if (onOpenRPPG) onOpenRPPG();
+                  }}
+                  className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-space-950 font-orbitron font-bold text-xs flex items-center gap-2 transition shadow-lg shadow-emerald-500/20"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span>OPEN LIVE CAMERA rPPG SCANNER</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* TAB 1: WEB BLUETOOTH BLE */}
           {activeTab === 'bluetooth' && (
             <div className="space-y-4">

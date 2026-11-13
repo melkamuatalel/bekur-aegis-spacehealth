@@ -13,8 +13,6 @@ import {
   Bluetooth,
   Database,
   Film,
-  Camera,
-  FileText,
 } from 'lucide-react';
 import BekurLogo from './BekurLogo';
 import { MISSION_METADATA } from '../data/nasaHealthData';
@@ -79,39 +77,10 @@ export default function MissionHeader({
               cockpitAudio.playBlip();
               onOpenDataIntegration();
             }}
-            className="px-3 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-space-950 hover:bg-space-900 text-hud-cyan border border-hud-cyan/40 hover:border-hud-cyan flex items-center space-x-2 transition shadow-[0_0_15px_rgba(0,240,255,0.2)]"
+            className="px-3.5 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-space-950 hover:bg-space-900 text-hud-cyan border border-hud-cyan/40 hover:border-hud-cyan flex items-center space-x-2 transition shadow-[0_0_15px_rgba(0,240,255,0.2)]"
           >
             <Bluetooth className="w-4 h-4 text-hud-cyan animate-pulse" />
-            <span className="hidden sm:inline">LIVE DATA & SENSORS</span>
-            <span className="sm:hidden">SENSORS</span>
-          </button>
-
-          {/* Contactless Camera rPPG Scanner Button */}
-          <button
-            onClick={() => {
-              cockpitAudio.playBlip();
-              onOpenRPPG();
-            }}
-            className="px-3 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-space-950 hover:bg-space-900 text-emerald-400 border border-emerald-500/40 hover:border-emerald-500 flex items-center space-x-2 transition shadow-[0_0_15px_rgba(16,185,129,0.2)]"
-            title="Scan Vitals with Facial Camera rPPG"
-          >
-            <Camera className="w-4 h-4 text-emerald-400 animate-pulse" />
-            <span className="hidden sm:inline">CAMERA rPPG</span>
-            <span className="sm:hidden">rPPG</span>
-          </button>
-
-          {/* General Comprehensive Flight Medical Dossier */}
-          <button
-            onClick={() => {
-              cockpitAudio.playBlip();
-              onOpenMedicalDossier();
-            }}
-            className="px-3 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-space-950 hover:bg-space-900 text-slate-200 border border-slate-700 hover:border-hud-cyan flex items-center space-x-2 transition shadow-md"
-            title="Open Complete NASA Mission Medical Dossier"
-          >
-            <FileText className="w-4 h-4 text-hud-cyan" />
-            <span className="hidden sm:inline">MEDICAL DOSSIER</span>
-            <span className="sm:hidden">DOSSIER</span>
+            <span>LIVE DATA & SENSORS</span>
           </button>
 
           {/* Simulate Emergency / Anomaly Toggle */}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   FileText,
   Printer,
@@ -15,6 +15,9 @@ import {
   Zap,
   Globe,
   Radio,
+  Copy,
+  Check,
+  Code,
 } from 'lucide-react';
 import { cockpitAudio } from '../utils/audioAlert';
 
@@ -25,6 +28,9 @@ export default function GeneralMedicalDossierModal({
   activeCrew,
   isEmergencyActive,
 }) {
+  const [isCopied, setIsCopied] = useState(false);
+  const [showJsonPreview, setShowJsonPreview] = useState(false);
+
   if (!isOpen) return null;
 
   const handlePrint = () => {
@@ -32,54 +38,85 @@ export default function GeneralMedicalDossierModal({
     window.print();
   };
 
+  const getDossierObject = () => ({
+    mission: 'ARES-V / Mars Transit Vehicle (MTV-1)',
+    missionSol: 142,
+    totalMissionDays: 520,
+    timestamp: new Date().toISOString(),
+    distanceFromEarthKm: 78450200,
+    lightSpeedCommsDelay: '04m 21s',
+    flightSurgeonCertification: 'NASA-STD-3001 Vol 1 § 4.3 // Autonomous Space Medicine',
+    squadronReadinessPercent: 89.8,
+    crewStatus: crew.map((c) => ({
+      id: c.id,
+      name: c.name,
+      role: c.role,
+      healthScore: c.overallHealthScore,
+      bpm: c.vitals?.bpm || 72,
+      spo2: c.vitals?.spo2 || 98.4,
+      bloodPressure: `${c.vitals?.bloodPressureSys || 120}/${c.vitals?.bloodPressureDia || 80}`,
+      sansScore: c.sansScore || 30,
+    })),
+    systemsEvaluation: {
+      cardiovascularLeadII: 'Refractory sinus rhythm with microgravity stroke volume reduction (-8%). Pacing protocol active for Abebe Worku.',
+      neuroOcularSANS: 'Optic nerve sheath diameter (ONSD) monitored at 5.8mm. Mild posterior globe flattening. Grade 1-2 SANS management nominal.',
+      genomicRadiation: 'Cumulative mission dose 148.6 mSv (NASA career threshold: 600.0 mSv). GeneLab GLDS-242 DSB repair pathway intact.',
+      acousticVoiceTriage: 'Vocal tract acoustic jitter (< 1.2% nominal baseline). Airway restriction negative. Real-time stress inference validated.',
+      contactlessOpticalRPPG: 'Facial capillary green-channel photoplethysmography active at 530nm. Real-time optical pulse verified without skin contact.',
+    },
+    flightSurgeonSignOff: {
+      certifyingAuthority: 'Dr. BEKUR-AI Autonomous Flight Surgeon & CMO',
+      missionClearance: 'PROVISIONAL FLIGHT DUTY CLEARANCE GRANTED',
+      mandatoryCountermeasures: [
+        'Daily 2.5-hour ARED high-load deadlifts and cycle ergometer',
+        'Lower-Body Negative Pressure (LBNP) 30 min prior to sleep cycle',
+        'Forced 2.5L/day hydration with 20 mEq potassium citrate alkalization',
+      ],
+    },
+  });
+
   const handleExportJson = () => {
     cockpitAudio.playSuccess();
-    const flightDossier = {
-      mission: 'ARES-V / Mars Transit Vehicle (MTV-1)',
-      missionSol: 142,
-      totalMissionDays: 520,
-      timestamp: new Date().toISOString(),
-      distanceFromEarthKm: 78450200,
-      lightSpeedCommsDelay: '04m 21s',
-      flightSurgeonCertification: 'NASA-STD-3001 Vol 1 § 4.3 // Autonomous Space Medicine',
-      squadronReadinessPercent: 89.8,
-      crewStatus: crew.map((c) => ({
-        id: c.id,
-        name: c.name,
-        role: c.role,
-        healthScore: c.overallHealthScore,
-        bpm: c.vitals.bpm,
-        spo2: c.vitals.spo2,
-        bloodPressure: `${c.vitals.bloodPressureSys}/${c.vitals.bloodPressureDia}`,
-        sansScore: c.sansScore,
-      })),
-      systemsEvaluation: {
-        cardiovascularLeadII: 'Refractory sinus rhythm with microgravity stroke volume reduction (-8%). Pacing protocol active for Abebe Worku.',
-        neuroOcularSANS: 'Optic nerve sheath diameter (ONSD) monitored at 5.8mm. Mild posterior globe flattening. Grade 1-2 SANS management nominal.',
-        genomicRadiation: 'Cumulative mission dose 148.6 mSv (NASA career threshold: 600.0 mSv). GeneLab GLDS-242 DSB repair pathway intact.',
-        acousticVoiceTriage: 'Vocal tract acoustic jitter (< 1.2% nominal baseline). Airway restriction negative. Real-time stress inference validated.',
-        contactlessOpticalRPPG: 'Facial capillary green-channel photoplethysmography active at 530nm. Real-time optical pulse verified without skin contact.',
-      },
-      flightSurgeonSignOff: {
-        certifyingAuthority: 'Dr. BEKUR-AI Autonomous Flight Surgeon & CMO',
-        missionClearance: 'PROVISIONAL FLIGHT DUTY CLEARANCE GRANTED',
-        mandatoryCountermeasures: [
-          'Daily 2.5-hour ARED high-load deadlifts and cycle ergometer',
-          'Lower-Body Negative Pressure (LBNP) 30 min prior to sleep cycle',
-          'Forced 2.5L/day hydration with 20 mEq potassium citrate alkalization',
-        ],
-      },
-    };
+    const flightDossier = getDossierObject();
+    const jsonStr = JSON.stringify(flightDossier, null, 2);
 
-    const blob = new Blob([JSON.stringify(flightDossier, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `NASA_ARES_V_General_Flight_Medical_Dossier_Sol142.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => URL.revokeObjectURL(url), 100);
+    // 1. Copy to clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(jsonStr).catch(() => {});
+    }
+
+    // 2. Data URI file download (cross-browser standard for Chrome, Firefox, Safari)
+    try {
+      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+      const a = document.createElement('a');
+      a.setAttribute('href', dataUri);
+      a.setAttribute('download', 'NASA_ARES_V_General_Flight_Medical_Dossier_Sol142.json');
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch (_) {
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'NASA_ARES_V_General_Flight_Medical_Dossier_Sol142.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 3000);
+  };
+
+  const handleCopyOnly = () => {
+    cockpitAudio.playSuccess();
+    const jsonStr = JSON.stringify(getDossierObject(), null, 2);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(jsonStr).catch(() => {});
+    }
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 3000);
   };
 
   return (
@@ -288,14 +325,61 @@ export default function GeneralMedicalDossierModal({
               <span>Encrypted Hash: 0x8a94e...3b1f (SHA-256 Verified)</span>
             </div>
           </div>
+
+          {/* Raw JSON In-App Preview Terminal (When toggled) */}
+          {showJsonPreview && (
+            <div className="p-4 rounded-2xl bg-space-950 border border-hud-cyan/40 space-y-2 animate-fadeIn font-mono">
+              <div className="flex items-center justify-between text-xs text-hud-cyan font-bold">
+                <span>NASA_ARES_V_FLIGHT_MEDICAL_DOSSIER.JSON</span>
+                <button
+                  onClick={handleCopyOnly}
+                  className="px-2.5 py-1 rounded bg-hud-cyan text-space-950 text-[10px] font-bold flex items-center gap-1"
+                >
+                  {isCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  <span>{isCopied ? 'COPIED!' : 'COPY RAW JSON'}</span>
+                </button>
+              </div>
+              <pre className="p-3 rounded-xl bg-space-900 border border-slate-800 text-[10px] text-slate-300 max-h-56 overflow-y-auto selection:bg-hud-cyan selection:text-space-950">
+                {JSON.stringify(getDossierObject(), null, 2)}
+              </pre>
+            </div>
+          )}
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 bg-space-950 border-t border-slate-800 flex items-center justify-between">
-          <span className="text-[11px] text-slate-400 hidden sm:inline">
-            NASA Space Apps Challenge 2026 // Team BEKUR
-          </span>
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+        <div className="p-4 bg-space-950 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-400 hidden lg:inline">
+              NASA Space Apps Challenge 2026 // Team BEKUR
+            </span>
+            {isCopied && (
+              <span className="text-xs px-2.5 py-1 rounded-lg bg-emerald-950 border border-emerald-500/50 text-emerald-300 font-bold flex items-center gap-1 animate-pulse">
+                <Check className="w-3.5 h-3.5" />
+                <span>COPIED TO CLIPBOARD & DOWNLOAD TRIGGERED!</span>
+              </span>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+            <button
+              onClick={() => {
+                cockpitAudio.playBlip();
+                setShowJsonPreview((prev) => !prev);
+              }}
+              className="px-3 py-2 rounded-xl bg-space-900 border border-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 text-xs font-bold transition"
+            >
+              <Code className="w-3.5 h-3.5" />
+              <span>{showJsonPreview ? 'HIDE RAW JSON' : 'VIEW RAW JSON'}</span>
+            </button>
+
+            <button
+              onClick={handleCopyOnly}
+              className="px-3 py-2 rounded-xl bg-space-900 border border-slate-700 text-slate-300 hover:text-white flex items-center gap-1.5 text-xs font-bold transition"
+            >
+              {isCopied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-hud-cyan" />}
+              <span>{isCopied ? 'COPIED!' : 'COPY JSON'}</span>
+            </button>
+
             <button
               onClick={handlePrint}
               className="px-3.5 py-2 rounded-xl bg-space-900 border border-slate-700 text-slate-200 hover:text-white hover:border-slate-500 flex items-center gap-1.5 text-xs font-bold transition"
@@ -303,6 +387,7 @@ export default function GeneralMedicalDossierModal({
               <Printer className="w-4 h-4" />
               <span>PRINT / SAVE PDF</span>
             </button>
+
             <button
               onClick={handleExportJson}
               className="px-4 py-2 rounded-xl bg-hud-cyan text-space-950 hover:bg-hud-cyan/90 flex items-center gap-1.5 text-xs font-black transition shadow-lg shadow-hud-cyan/20"
