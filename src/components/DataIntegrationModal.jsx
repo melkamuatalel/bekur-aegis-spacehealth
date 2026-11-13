@@ -32,6 +32,7 @@ export default function DataIntegrationModal({
   const [selectedDataset, setSelectedDataset] = useState(null);
   const [isSimulatingBle, setIsSimulatingBle] = useState(false);
   const [simulatedHr, setSimulatedHr] = useState(80);
+  const [uploadFeedback, setUploadFeedback] = useState(null);
   const simIntervalRef = useRef(null);
 
   useEffect(() => {
@@ -178,6 +179,7 @@ export default function DataIntegrationModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploadFeedback(null);
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
@@ -188,16 +190,25 @@ export default function DataIntegrationModal({
           const bpm = json.heartRate || json.bpm || 80;
           const spo2 = json.spo2 || 98;
           onApplyCustomTelemetry({ bpm, spo2, source: `CUSTOM FILE: ${file.name}` });
-          alert(`Successfully ingested JSON dataset: ${file.name}`);
+          setUploadFeedback({
+            type: 'success',
+            msg: `✓ Successfully ingested JSON dataset "${file.name}"! Applied Heart Rate: ${bpm} BPM, SpO2: ${spo2}%.`,
+          });
         } else {
           // Assume CSV
           const lines = text.split('\n');
-          alert(`Successfully ingested CSV file with ${lines.length} rows! Telemetry mapped to BEKUR-Aegis.`);
           onApplyCustomTelemetry({ bpm: 88, spo2: 97.8, source: `CUSTOM CSV: ${file.name}` });
+          setUploadFeedback({
+            type: 'success',
+            msg: `✓ Successfully parsed CSV file "${file.name}" (${lines.length} rows)! Telemetry mapped into cockpit.`,
+          });
         }
         cockpitAudio.playHeartbeat();
       } catch (err) {
-        alert('Could not parse file. Please upload a valid JSON or CSV biometric file.');
+        setUploadFeedback({
+          type: 'error',
+          msg: 'Could not parse file. Please upload a valid JSON or CSV biometric file.',
+        });
       }
     };
     reader.readAsText(file);
@@ -507,6 +518,18 @@ export default function DataIntegrationModal({
                   onChange={handleFileUpload}
                   className="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-mono file:font-bold file:bg-hud-cyan file:text-space-950 hover:file:bg-hud-cyan/85 cursor-pointer"
                 />
+
+                {uploadFeedback && (
+                  <div
+                    className={`mt-3 p-3 rounded-xl text-xs font-mono border max-w-md animate-fadeIn ${
+                      uploadFeedback.type === 'success'
+                        ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300'
+                        : 'bg-rose-950/60 border-rose-500/60 text-rose-300'
+                    }`}
+                  >
+                    {uploadFeedback.msg}
+                  </div>
+                )}
               </div>
             </div>
           )}
