@@ -259,7 +259,7 @@ export default function GeneralMedicalDossierModal({
                 <div>
                   <span className="font-bold text-white block">5. ZERO-CONTACT OPTICAL CAMERA rPPG VERIFICATION</span>
                   <p className="text-slate-400 font-sans text-xs mt-0.5 leading-relaxed">
-                    Facial microvascular blood absorption ($\lambda = 530\text{ nm}$ green channel) continuously estimates pulsatile hemodynamics with $\pm 2.1\text{ BPM}$ accuracy. Completely eliminates the need for continuous sticky hydrogel chest patches during long-duration interplanetary cruise.
+                    Facial microvascular blood absorption (530 nm green channel) continuously estimates pulsatile hemodynamics with ±2.1 BPM accuracy. Completely eliminates the need for continuous sticky hydrogel chest patches during long-duration interplanetary cruise.
                   </p>
                 </div>
               </div>

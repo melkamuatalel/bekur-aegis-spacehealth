@@ -293,7 +293,7 @@ export default function OpticalRPPGScannerModal({
                 </span>
               </div>
               <p className="text-xs text-slate-400 font-sans">
-                Remote Photoplethysmography (rPPG) measures facial capillary blood absorption ($\lambda = 530\text{ nm}$) without physical wires.
+                Remote Photoplethysmography (rPPG) measures facial capillary blood absorption (530 nm green spectrum) without physical wires.
               </p>
             </div>
           </div>
@@ -344,7 +344,7 @@ export default function OpticalRPPGScannerModal({
 
             {/* Bottom PPG Pulse Oscilloscope Label */}
             <div className="absolute bottom-1.5 left-4 z-20 text-[9px] text-emerald-400 font-mono">
-              BVP WAVEFORM (PULSATILE GREEN CHANNEL $\Delta HbO_2$)
+              BVP WAVEFORM (PULSATILE GREEN CHANNEL ΔHbO2)
             </div>
           </div>
 
@@ -396,7 +396,7 @@ export default function OpticalRPPGScannerModal({
             <span className="font-orbitron font-bold text-hud-cyan text-[11px] block mb-1">
               WHY CONTACTLESS rPPG SOLVES DEEP SPACE CONFINEMENT:
             </span>
-            During a 3-year Mars mission, astronauts cannot continuously wear 12-lead chest adhesive hydrogels without suffering painful skin breakdown and contact dermatitis. BEKUR-Aegis leverages ambient cockpit camera streams to silently infer pulsatile hemodynamics with $\pm 2.1\text{ BPM}$ clinical accuracy.
+            During a 3-year Mars mission, astronauts cannot continuously wear 12-lead chest adhesive hydrogels without suffering painful skin breakdown and contact dermatitis. BEKUR-Aegis leverages ambient cockpit camera streams to silently infer pulsatile hemodynamics with ±2.1 BPM clinical accuracy.
           </div>
 
           {/* Sync & Action Buttons */}
