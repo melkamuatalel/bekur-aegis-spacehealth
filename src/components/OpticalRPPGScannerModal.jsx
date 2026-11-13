@@ -12,6 +12,7 @@ import {
   Zap,
   Sliders,
   Sparkles,
+  AlertTriangle,
 } from 'lucide-react';
 import { cockpitAudio } from '../utils/audioAlert';
 
