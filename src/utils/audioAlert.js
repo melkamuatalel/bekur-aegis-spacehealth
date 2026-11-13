@@ -62,6 +62,27 @@ class CockpitAudioSynthesizer {
     } catch (e) {}
   }
 
+  // Success confirmation chime (ascending C5 -> E5 -> G5 chord)
+  playSuccess() {
+    if (this.muted) return;
+    try {
+      this.init();
+      const now = this.ctx.currentTime;
+      [523.25, 659.25, 783.99].forEach((freq, idx) => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+        gain.gain.setValueAtTime(0.05, now + idx * 0.06);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.12);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.06);
+        osc.stop(now + idx * 0.06 + 0.12);
+      });
+    } catch (e) {}
+  }
+
   // Urgent NASA master alarm warning tone
   playWarningAlarm() {
     if (this.muted) return;
@@ -85,4 +106,14 @@ class CockpitAudioSynthesizer {
   }
 }
 
-export const cockpitAudio = new CockpitAudioSynthesizer();
+const rawCockpitAudio = new CockpitAudioSynthesizer();
+
+export const cockpitAudio = new Proxy(rawCockpitAudio, {
+  get(target, prop) {
+    if (prop in target) {
+      const val = target[prop];
+      return typeof val === 'function' ? val.bind(target) : val;
+    }
+    return () => {};
+  },
+});
