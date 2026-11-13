@@ -80,6 +80,28 @@ export default function App() {
     setIsAnomalyActive((prev) => !prev);
   };
 
+  const handleApplyCustomTelemetry = (customData) => {
+    setCrew((prevCrew) =>
+      prevCrew.map((c) => {
+        if (c.id === activeCrewId) {
+          return {
+            ...c,
+            sansScore: customData.sans ?? c.sansScore,
+            status: customData.bpm > 115 || (customData.sans && customData.sans > 70) ? 'ELEVATED' : c.status,
+            vitals: {
+              ...c.vitals,
+              heartRate: customData.bpm ?? c.vitals.heartRate,
+              bpm: customData.bpm ?? c.vitals.bpm,
+              spo2: customData.spo2 ?? c.vitals.spo2,
+            },
+          };
+        }
+        return c;
+      })
+    );
+    cockpitAudio.playHeartbeat();
+  };
+
   // Navigation Pages Definition (Optimized concise labels for 100% all-screen visibility with zero truncation)
   const NAV_PAGES = [
     { id: 'cockpit', label: 'Cockpit Deck', icon: Tv, badge: 'Shared Bridge' },
@@ -384,7 +406,7 @@ export default function App() {
       <DataIntegrationModal
         isOpen={isDataIntegrationOpen}
         onClose={() => setIsDataIntegrationOpen(false)}
-        onApplyCustomTelemetry={() => {}}
+        onApplyCustomTelemetry={handleApplyCustomTelemetry}
       />
       <AIDoctorModal
         isOpen={isAIDocOpen}
