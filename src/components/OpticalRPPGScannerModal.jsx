@@ -33,10 +33,13 @@ export default function OpticalRPPGScannerModal({
   const [opticalPulseBpm, setOpticalPulseBpm] = useState('--');
   const [perfusionIndex, setPerfusionIndex] = useState('0.00');
   const [confidenceScore, setConfidenceScore] = useState('0.0');
-  const [isFaceLocked, setIsFaceLocked] = useState(false);
-  const [isOccluded, setIsOccluded] = useState(false);
+  const [faceStatus, setFaceStatus] = useState('NO_FACE'); // 'LOCKED' | 'OCCLUDED' | 'NO_FACE'
   const [scanProgress, setScanProgress] = useState(0);
   const [isSynced, setIsSynced] = useState(false);
+
+  const isFaceLocked = faceStatus === 'LOCKED';
+  const isOccluded = faceStatus === 'OCCLUDED';
+  const isNoFace = faceStatus === 'NO_FACE';
 
   const greenHistoryRef = useRef([]);
 
@@ -127,9 +130,9 @@ export default function OpticalRPPGScannerModal({
 
       ctx.clearRect(0, 0, w, h);
 
-      // 1. Real-time Optical green absorption sampling from video
+      // 1. Real-time Optical sampling & Human Face Chromaticity detection
       let sampleGreen = 128;
-      let sensorCovered = false;
+      let targetState = 'NO_FACE'; // 'OCCLUDED' | 'NO_FACE' | 'LOCKED'
       const video = videoRef.current;
 
       if (video && video.readyState >= 2 && !cameraError) {
@@ -145,18 +148,31 @@ export default function OpticalRPPGScannerModal({
           let sumR = 0;
           let sumG = 0;
           let sumB = 0;
+          let skinPixCount = 0;
           const totalPix = imgData.data.length / 4;
+
           for (let i = 0; i < imgData.data.length; i += 4) {
-            sumR += imgData.data[i];
-            sumG += imgData.data[i + 1];
-            sumB += imgData.data[i + 2];
+            const r = imgData.data[i];
+            const g = imgData.data[i + 1];
+            const b = imgData.data[i + 2];
+            sumR += r;
+            sumG += g;
+            sumB += b;
+
+            // Human skin chromophore chromaticity:
+            // Oxygenated hemoglobin absorbs green/blue, giving R > G and G >= B
+            if (r > g && g >= b && (r - g) >= 7 && (r - b) >= 14 && r > 38 && b < 210) {
+              skinPixCount++;
+            }
           }
+
           const avgR = sumR / (totalPix || 1);
           const avgG = sumG / (totalPix || 1);
           const avgB = sumB / (totalPix || 1);
           const luminance = 0.299 * avgR + 0.587 * avgG + 0.114 * avgB;
+          const skinFraction = skinPixCount / (totalPix || 1);
 
-          // Variance check across patch (real skin has lighting variations, covered lens is uniform)
+          // Variance check across patch
           let sumSqDiff = 0;
           for (let i = 0; i < imgData.data.length; i += 4) {
             const diff = imgData.data[i + 1] - avgG;
@@ -164,33 +180,38 @@ export default function OpticalRPPGScannerModal({
           }
           const stdDevG = Math.sqrt(sumSqDiff / (totalPix || 1));
 
-          // Physical occlusion / dark camera detection:
-          // Triggers if pitch black, finger covering lens, dark paper, or overexposed
+          // 1. OCCLUSION / COVERED LENS CHECK
           if (
             luminance < 36 ||
-            avgG < 30 ||
-            (avgR < 32 && avgG < 32 && avgB < 32) ||
-            (luminance < 58 && stdDevG < 3.8) ||
-            luminance > 242
+            avgG < 26 ||
+            (avgR < 28 && avgG < 28 && avgB < 28) ||
+            (luminance < 55 && stdDevG < 3.5) ||
+            luminance > 244
           ) {
-            sensorCovered = true;
+            targetState = 'OCCLUDED';
             sampleGreen = 0;
-          } else {
-            sensorCovered = false;
+          }
+          // 2. EMPTY ROOM / WALL / NO HUMAN FACE IN RETICLE
+          // Plain walls, ceiling, furniture, or clothes have skinFraction < 0.35 or avgR <= avgG
+          else if (skinFraction < 0.35 || avgR <= avgG) {
+            targetState = 'NO_FACE';
+            sampleGreen = 0;
+          }
+          // 3. REAL HUMAN FACE VERIFIED IN RETICLE
+          else {
+            targetState = 'LOCKED';
             sampleGreen = avgG;
           }
         } catch (_) {
-          sensorCovered = true;
+          targetState = 'OCCLUDED';
         }
       } else {
         // Fallback simulation when no webcam exists
         sampleGreen = 128 + Math.sin(scanPhase * 2.5) * 12 + Math.sin(scanPhase * 0.7) * 4;
-        sensorCovered = false;
+        targetState = 'LOCKED';
       }
 
-      // Update state flags
-      setIsOccluded((prev) => (prev !== sensorCovered ? sensorCovered : prev));
-      setIsFaceLocked((prev) => (prev !== !sensorCovered ? !sensorCovered : prev));
+      setFaceStatus(targetState);
 
       // 2. Draw futuristic NASA optical targeting HUD
       const roiW = w * 0.45;
@@ -199,55 +220,8 @@ export default function OpticalRPPGScannerModal({
       const roiY = h * 0.18;
       const bracketLen = 22;
 
-      if (sensorCovered) {
-        // RED OCCLUDED HUD
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 2.5;
-        ctx.strokeRect(roiX, roiY, roiW, roiH);
-
-        ctx.strokeStyle = '#ef4444';
-        ctx.lineWidth = 4;
-        // Top-Left
-        ctx.beginPath();
-        ctx.moveTo(roiX, roiY + bracketLen);
-        ctx.lineTo(roiX, roiY);
-        ctx.lineTo(roiX + bracketLen, roiY);
-        ctx.stroke();
-        // Top-Right
-        ctx.beginPath();
-        ctx.moveTo(roiX + roiW - bracketLen, roiY);
-        ctx.lineTo(roiX + roiW, roiY);
-        ctx.lineTo(roiX + roiW, roiY + bracketLen);
-        ctx.stroke();
-        // Bottom-Left
-        ctx.beginPath();
-        ctx.moveTo(roiX, roiY + roiH - bracketLen);
-        ctx.lineTo(roiX, roiY + roiH);
-        ctx.lineTo(roiX + bracketLen, roiY + roiH);
-        ctx.stroke();
-        // Bottom-Right
-        ctx.beginPath();
-        ctx.moveTo(roiX + roiW - bracketLen, roiY + roiH);
-        ctx.lineTo(roiX + roiW, roiY + roiH);
-        ctx.lineTo(roiX + roiW, roiY + roiH - bracketLen);
-        ctx.stroke();
-
-        // Center Warning Label
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.95)';
-        ctx.font = 'bold 11px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('⚠️ OPTICAL SENSOR OCCLUDED', w / 2, roiY + roiH / 2 - 8);
-        ctx.font = '9px monospace';
-        ctx.fillStyle = 'rgba(252, 165, 165, 0.9)';
-        ctx.fillText('UNCOVER WEBCAM // ZERO CAPILLARY PERFUSION', w / 2, roiY + roiH / 2 + 10);
-        ctx.textAlign = 'left';
-      } else {
-        // NOMINAL CYAN & GREEN HUD
-        ctx.strokeStyle = '#00f0ff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(roiX, roiY, roiW, roiH);
-
-        ctx.strokeStyle = '#10b981';
+      const drawCornerBrackets = (color) => {
+        ctx.strokeStyle = color;
         ctx.lineWidth = 3.5;
         // Top-Left
         ctx.beginPath();
@@ -273,6 +247,48 @@ export default function OpticalRPPGScannerModal({
         ctx.lineTo(roiX + roiW, roiY + roiH);
         ctx.lineTo(roiX + roiW, roiY + roiH - bracketLen);
         ctx.stroke();
+      };
+
+      if (targetState === 'OCCLUDED') {
+        // RED OCCLUDED HUD
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(roiX, roiY, roiW, roiH);
+        drawCornerBrackets('#ef4444');
+
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.95)';
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠️ OPTICAL SENSOR OCCLUDED', w / 2, roiY + roiH / 2 - 8);
+        ctx.font = '9px monospace';
+        ctx.fillStyle = 'rgba(252, 165, 165, 0.9)';
+        ctx.fillText('UNCOVER WEBCAM // ZERO CAPILLARY PERFUSION', w / 2, roiY + roiH / 2 + 10);
+        ctx.textAlign = 'left';
+      } else if (targetState === 'NO_FACE') {
+        // AMBER/YELLOW NO FACE HUD (LOOKING AT BLANK WALL OR ROOM)
+        ctx.save();
+        ctx.setLineDash([6, 6]);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(roiX, roiY, roiW, roiH);
+        ctx.restore();
+
+        drawCornerBrackets('#f59e0b');
+
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.95)';
+        ctx.font = 'bold 11px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚠️ NO ASTRONAUT FACE DETECTED', w / 2, roiY + roiH / 2 - 8);
+        ctx.font = '9px monospace';
+        ctx.fillStyle = 'rgba(253, 230, 138, 0.9)';
+        ctx.fillText('ALIGN FACE IN RETICLE // AWAITING HUMAN BIOMETRICS', w / 2, roiY + roiH / 2 + 10);
+        ctx.textAlign = 'left';
+      } else {
+        // NOMINAL CYAN & GREEN HUD (HUMAN FACE VERIFIED)
+        ctx.strokeStyle = '#00f0ff';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(roiX, roiY, roiW, roiH);
+        drawCornerBrackets('#10b981');
 
         // Scanning laser bar
         const laserY = roiY + (Math.sin(scanPhase) * 0.5 + 0.5) * roiH;
@@ -293,10 +309,10 @@ export default function OpticalRPPGScannerModal({
       const ppgBoxH = 46;
       ctx.fillStyle = 'rgba(4, 7, 17, 0.85)';
       ctx.fillRect(10, ppgBoxY, w - 20, ppgBoxH);
-      ctx.strokeStyle = sensorCovered ? '#ef4444' : '#334155';
+      ctx.strokeStyle = targetState === 'OCCLUDED' ? '#ef4444' : targetState === 'NO_FACE' ? '#f59e0b' : '#334155';
       ctx.strokeRect(10, ppgBoxY, w - 20, ppgBoxH);
 
-      if (sensorCovered) {
+      if (targetState === 'OCCLUDED') {
         // Red Flatline
         ctx.beginPath();
         ctx.strokeStyle = '#ef4444';
@@ -309,13 +325,29 @@ export default function OpticalRPPGScannerModal({
         ctx.font = 'bold 9px monospace';
         ctx.fillText('FLATLINE: NO PULSATILE SIGNAL // SENSOR OCCLUDED (COVERED)', 20, ppgBoxY + 18);
 
-        // Immediate state update when covered
+        greenHistoryRef.current = [];
+        setOpticalPulseBpm('--');
+        setPerfusionIndex('0.00');
+        setConfidenceScore('0.0');
+      } else if (targetState === 'NO_FACE') {
+        // Amber Standby Flatline
+        ctx.beginPath();
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.moveTo(12, ppgBoxY + ppgBoxH / 2);
+        ctx.lineTo(w - 12, ppgBoxY + ppgBoxH / 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#f59e0b';
+        ctx.font = 'bold 9px monospace';
+        ctx.fillText('STANDBY: NO FACIAL TISSUE DETECTED (POINT CAMERA AT ASTRONAUT)', 20, ppgBoxY + 18);
+
         greenHistoryRef.current = [];
         setOpticalPulseBpm('--');
         setPerfusionIndex('0.00');
         setConfidenceScore('0.0');
       } else {
-        // Uncovered: add sample to buffer
+        // Emerald Pulsatile Wave
         if (sampleGreen > 0) {
           greenHistoryRef.current.push(sampleGreen);
           if (greenHistoryRef.current.length > 90) {
@@ -323,7 +355,6 @@ export default function OpticalRPPGScannerModal({
           }
         }
 
-        // Emerald Pulsatile Wave
         ctx.beginPath();
         ctx.strokeStyle = '#10b981';
         ctx.lineWidth = 2;
@@ -341,7 +372,7 @@ export default function OpticalRPPGScannerModal({
         }
         ctx.stroke();
 
-        // Calculation update every 400ms when face is visible
+        // Calculation update every 400ms when face is verified
         if (now - lastBpmCalcTime > 400) {
           lastBpmCalcTime = now;
           setScanProgress((prev) => Math.min(100, prev + 15));
@@ -446,6 +477,8 @@ export default function OpticalRPPGScannerModal({
             <div className={`absolute top-3 left-3 z-20 flex items-center gap-2 px-3 py-1 rounded-xl border backdrop-blur-md ${
               isOccluded
                 ? 'bg-rose-950/90 border-rose-500/70 text-hud-rose animate-pulse'
+                : isNoFace
+                ? 'bg-amber-950/90 border-amber-500/70 text-amber-300 animate-pulse'
                 : isFaceLocked
                 ? 'bg-space-950/85 border-hud-cyan/40 text-hud-cyan'
                 : 'bg-space-950/85 border-slate-700 text-slate-400'
@@ -454,6 +487,8 @@ export default function OpticalRPPGScannerModal({
               <span className="text-[10px] font-bold font-orbitron">
                 {isOccluded
                   ? '⚠️ SENSOR OCCLUDED // CAMERA COVERED (ZERO PERFUSION)'
+                  : isNoFace
+                  ? '⚠️ NO ASTRONAUT FACE DETECTED // ALIGN WITH RETICLE'
                   : isFaceLocked
                   ? 'CAPILLARY OPTICAL TARGET LOCKED'
                   : 'ALIGN FACE WITH BIOMETRIC RETICLE'}
@@ -464,11 +499,21 @@ export default function OpticalRPPGScannerModal({
             <div className={`absolute top-3 right-3 z-20 flex items-center gap-2 px-3 py-1 rounded-xl border backdrop-blur-md ${
               isOccluded
                 ? 'bg-rose-950/90 border-rose-500/50 text-rose-300'
+                : isNoFace
+                ? 'bg-amber-950/90 border-amber-500/50 text-amber-300'
                 : 'bg-space-950/85 border-slate-800 text-slate-300'
             }`}>
-              <span className={`w-2 h-2 rounded-full ${isOccluded ? 'bg-rose-500' : 'bg-emerald-400 animate-ping'}`} />
+              <span className={`w-2 h-2 rounded-full ${
+                isOccluded ? 'bg-rose-500' : isNoFace ? 'bg-amber-400' : 'bg-emerald-400 animate-ping'
+              }`} />
               <span className="text-[10px] font-mono">
-                {isOccluded ? 'OPTICAL LINK SEVERED' : cameraError ? 'SIMULATION FALLBACK' : 'LIVE 30 FPS RGB SPECTROMETRY'}
+                {isOccluded
+                  ? 'OPTICAL LINK SEVERED'
+                  : isNoFace
+                  ? 'AWAITING HUMAN SUBJECT'
+                  : cameraError
+                  ? 'SIMULATION FALLBACK'
+                  : 'LIVE 30 FPS RGB SPECTROMETRY'}
               </span>
             </div>
 
@@ -484,30 +529,36 @@ export default function OpticalRPPGScannerModal({
             <div className="p-3.5 rounded-2xl bg-space-950 border border-slate-800 flex flex-col justify-between">
               <span className="text-[10px] text-slate-400 uppercase font-bold flex items-center justify-between">
                 <span>OPTICAL PULSE</span>
-                <Heart className={`w-3.5 h-3.5 ${isOccluded ? 'text-slate-600' : 'text-hud-rose animate-pulse fill-current'}`} />
+                <Heart className={`w-3.5 h-3.5 ${!isFaceLocked ? 'text-slate-600' : 'text-hud-rose animate-pulse fill-current'}`} />
               </span>
-              <div className={`font-orbitron font-extrabold text-2xl mt-1 ${isOccluded ? 'text-slate-500' : 'text-hud-rose'}`}>
-                {isOccluded ? '--' : opticalPulseBpm} <span className="text-xs text-slate-400 font-normal">BPM</span>
+              <div className={`font-orbitron font-extrabold text-2xl mt-1 ${!isFaceLocked ? 'text-slate-500' : 'text-hud-rose'}`}>
+                {isFaceLocked ? opticalPulseBpm : '--'} <span className="text-xs text-slate-400 font-normal">BPM</span>
               </div>
-              <span className="text-[9px] text-slate-500">{isOccluded ? 'Sensor Blocked' : 'Contactless Facial rPPG'}</span>
+              <span className="text-[9px] text-slate-500">
+                {isOccluded ? 'Sensor Blocked' : isNoFace ? 'No Face In Frame' : 'Contactless Facial rPPG'}
+              </span>
             </div>
 
             {/* Perfusion Index */}
             <div className="p-3.5 rounded-2xl bg-space-950 border border-slate-800 flex flex-col justify-between">
               <span className="text-[10px] text-slate-400 uppercase font-bold">PERFUSION INDEX</span>
-              <div className={`font-orbitron font-extrabold text-2xl mt-1 ${isOccluded ? 'text-slate-500' : 'text-hud-cyan'}`}>
-                {isOccluded ? '0.00' : perfusionIndex}%
+              <div className={`font-orbitron font-extrabold text-2xl mt-1 ${!isFaceLocked ? 'text-slate-500' : 'text-hud-cyan'}`}>
+                {isFaceLocked ? perfusionIndex : '0.00'}%
               </div>
-              <span className="text-[9px] text-slate-500">{isOccluded ? 'No Arterial Pulse' : 'Microvascular Pulse Vol.'}</span>
+              <span className="text-[9px] text-slate-500">
+                {isOccluded ? 'No Arterial Pulse' : isNoFace ? 'Awaiting Capillary Pulse' : 'Microvascular Pulse Vol.'}
+              </span>
             </div>
 
             {/* Optical Confidence */}
             <div className="p-3.5 rounded-2xl bg-space-950 border border-slate-800 flex flex-col justify-between">
               <span className="text-[10px] text-slate-400 uppercase font-bold">SNR CONFIDENCE</span>
-              <div className={`font-orbitron font-extrabold text-2xl mt-1 ${isOccluded ? 'text-slate-500' : 'text-emerald-400'}`}>
-                {isOccluded ? '0.0' : confidenceScore}%
+              <div className={`font-orbitron font-extrabold text-2xl mt-1 ${!isFaceLocked ? 'text-slate-500' : 'text-emerald-400'}`}>
+                {isFaceLocked ? confidenceScore : '0.0'}%
               </div>
-              <span className="text-[9px] text-slate-500">{isOccluded ? 'Zero Signal' : 'Signal-to-Noise Ratio'}</span>
+              <span className="text-[9px] text-slate-500">
+                {isOccluded ? 'Zero Signal' : isNoFace ? 'No Biometric Lock' : 'Signal-to-Noise Ratio'}
+              </span>
             </div>
 
             {/* NASA Standard Clearance */}
@@ -519,6 +570,11 @@ export default function OpticalRPPGScannerModal({
                     <AlertTriangle className="w-4 h-4 text-hud-rose" />
                     <span className="text-hud-rose text-xs">OCCLUSION FAULT</span>
                   </>
+                ) : isNoFace ? (
+                  <>
+                    <Scan className="w-4 h-4 text-amber-400 animate-pulse" />
+                    <span className="text-amber-400 text-xs">STANDBY</span>
+                  </>
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4 text-emerald-400" />
@@ -526,7 +582,9 @@ export default function OpticalRPPGScannerModal({
                   </>
                 )}
               </div>
-              <span className="text-[9px] text-slate-500">{isOccluded ? 'Awaiting Face Exposure' : 'Passive Habit. Scan'}</span>
+              <span className="text-[9px] text-slate-500">
+                {isOccluded ? 'Awaiting Face Exposure' : isNoFace ? 'Align Astronaut Face' : 'Passive Habit. Scan'}
+              </span>
             </div>
           </div>
 
@@ -546,9 +604,9 @@ export default function OpticalRPPGScannerModal({
             <div className="flex items-center gap-2">
               <button
                 onClick={handleApplyToCrew}
-                disabled={isSynced || isOccluded}
+                disabled={isSynced || !isFaceLocked}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 shadow-lg ${
-                  isOccluded
+                  !isFaceLocked
                     ? 'bg-space-950 border border-slate-800 text-slate-500 cursor-not-allowed'
                     : isSynced
                     ? 'bg-emerald-600 text-white shadow-emerald-500/20'
@@ -557,6 +615,8 @@ export default function OpticalRPPGScannerModal({
               >
                 {isOccluded ? (
                   <span>UNCOVER CAMERA TO SYNC</span>
+                ) : isNoFace ? (
+                  <span>ALIGN FACE TO SYNC</span>
                 ) : isSynced ? (
                   <>
                     <CheckCircle2 className="w-4 h-4" />

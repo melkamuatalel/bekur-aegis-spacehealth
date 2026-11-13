@@ -75,48 +75,76 @@ export default function GeneralMedicalDossierModal({
     },
   });
 
+  const copyTextToClipboard = (text) => {
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          setIsCopied(true);
+        })
+        .catch(() => {
+          fallbackCopy(text);
+        });
+    } else {
+      fallbackCopy(text);
+    }
+  };
+
+  const fallbackCopy = (text) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      textArea.style.top = '-9999px';
+      textArea.setAttribute('readonly', '');
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      setIsCopied(true);
+    } catch (err) {
+      console.warn('Fallback copy failed', err);
+    }
+  };
+
   const handleExportJson = () => {
     cockpitAudio.playSuccess();
     const flightDossier = getDossierObject();
     const jsonStr = JSON.stringify(flightDossier, null, 2);
 
     // 1. Copy to clipboard
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(jsonStr).catch(() => {});
-    }
+    copyTextToClipboard(jsonStr);
 
-    // 2. Data URI file download (cross-browser standard for Chrome, Firefox, Safari)
+    // 2. Blob file download
     try {
-      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+      const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.setAttribute('href', dataUri);
-      a.setAttribute('download', 'NASA_ARES_V_General_Flight_Medical_Dossier_Sol142.json');
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    } catch (_) {
-      const blob = new Blob([jsonStr], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      a.style.display = 'none';
       a.href = url;
       a.download = 'NASA_ARES_V_General_Flight_Medical_Dossier_Sol142.json';
       document.body.appendChild(a);
       a.click();
-      document.body.removeChild(a);
+      setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      }, 500);
+    } catch (_) {
+      const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonStr);
+      window.open(dataUri, '_blank');
     }
 
     setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 3000);
+    setTimeout(() => setIsCopied(false), 4000);
   };
 
   const handleCopyOnly = () => {
     cockpitAudio.playSuccess();
     const jsonStr = JSON.stringify(getDossierObject(), null, 2);
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(jsonStr).catch(() => {});
-    }
+    copyTextToClipboard(jsonStr);
     setIsCopied(true);
-    setTimeout(() => setIsCopied(false), 3000);
+    setTimeout(() => setIsCopied(false), 4000);
   };
 
   return (
