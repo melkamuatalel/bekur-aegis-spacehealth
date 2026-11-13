@@ -531,6 +531,31 @@ export default function DataIntegrationModal({
                   </div>
                 )}
               </div>
+
+              {/* Sample Files Download for Quick Testing */}
+              <div className="p-3.5 rounded-xl bg-space-950 border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <span className="text-xs text-slate-400">
+                  Need sample test files? Download ready-made flight telemetry:
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <a
+                    href="/sample-astronaut-telemetry.json"
+                    download="sample-astronaut-telemetry.json"
+                    className="px-3 py-1.5 rounded-lg bg-space-900 border border-hud-cyan/40 hover:border-hud-cyan text-hud-cyan text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>📥 DOWNLOAD SAMPLE JSON</span>
+                  </a>
+                  <a
+                    href="/sample-astronaut-telemetry.csv"
+                    download="sample-astronaut-telemetry.csv"
+                    className="px-3 py-1.5 rounded-lg bg-space-900 border border-emerald-500/40 hover:border-emerald-400 text-emerald-400 text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>📥 DOWNLOAD SAMPLE CSV</span>
+                  </a>
+                </div>
+              </div>
             </div>
           )}
 

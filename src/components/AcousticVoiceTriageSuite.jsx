@@ -540,45 +540,59 @@ export default function AcousticVoiceTriageSuite({
           </div>
 
           {/* Audio Transcript Box (Speech-To-Text) */}
-          <div className="p-3.5 rounded-xl bg-space-900/90 border border-slate-800 space-y-1">
-            <span className="text-[10px] text-slate-400 uppercase font-bold flex items-center justify-between">
-              <span>
-                {isLiveMicActive ? 'LIVE SPEECH-TO-TEXT COMMS STREAM:' : `SPEECH-TO-TEXT COMMS LOG (${currentScenario.astronaut}):`}
-              </span>
-              {isLiveMicActive && (
-                <span className="text-[9px] text-emerald-400 font-bold uppercase">
-                  {liveMetrics.isSpeaking ? '● RECEIVING AUDIO' : '○ LISTENING'}
+          <div className="p-3.5 rounded-xl bg-space-900/90 border border-slate-800 space-y-1.5">
+            <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-slate-400 font-bold uppercase">
+              <span className="flex items-center gap-1.5">
+                <Mic className="w-3 h-3 text-hud-cyan" />
+                <span>
+                  {isLiveMicActive ? 'LIVE SPEECH-TO-TEXT COMMS STREAM:' : `SPEECH-TO-TEXT COMMS LOG (${currentScenario.astronaut}):`}
                 </span>
-              )}
-            </span>
-            <p className="text-xs text-white font-sans italic min-h-[36px]">
+              </span>
+              <div className="flex items-center gap-1.5">
+                {isLiveMicActive && (
+                  <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono font-bold ${
+                    liveMetrics.isSpeaking ? 'bg-emerald-950 text-emerald-300 border border-emerald-500/50' : 'bg-space-950 text-slate-400'
+                  }`}>
+                    {liveMetrics.isSpeaking ? '● RECEIVING AUDIO (48 kHz DSP)' : '○ LISTENING (SPEAK NOW)'}
+                  </span>
+                )}
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-space-950 border border-slate-700 text-slate-400 font-mono hidden sm:inline">
+                  CHROME/EDGE: LIVE STT • FIREFOX: DSP SPECTROMETRY
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-white font-sans italic min-h-[36px] bg-space-950/60 p-2.5 rounded-lg border border-slate-800/80">
               {isLiveMicActive
                 ? liveTranscript
                   ? liveTranscript
                   : liveMetrics.isSpeaking
-                  ? `Pilot Worku (Live Mic Stream): "Acoustic audio wave received at ${liveMetrics.pitchHz} Hz (${liveMetrics.dbLevel} dBFS) — Analyzing vocal cord micro-tremor..."`
-                  : '"[Microphone active — speak into your microphone to stream live vocal telemetry...]"'
+                  ? `Pilot Worku (Live Mic Ingest): "Vocal frequency detected at ${liveMetrics.pitchHz} Hz (${liveMetrics.dbLevel} dBFS) — autonomous vocal cord micro-tremor and acoustic jitter logged."`
+                  : '"[Microphone active — speak into your mic to stream live vocal telemetry, or click a preset comms phrase below...]"'
                 : currentScenario.transcript}
             </p>
 
             {/* Quick Comms Transmission Simulation Buttons for Offline/Firefox Environments */}
             {isLiveMicActive && (
-              <div className="pt-2 flex flex-wrap items-center gap-1.5 border-t border-slate-800/80">
-                <span className="text-[9px] text-slate-500 uppercase font-bold mr-1">PRESET COMMS PHRASES:</span>
+              <div className="pt-1.5 flex flex-wrap items-center gap-1.5 border-t border-slate-800/80">
+                <span className="text-[9px] text-hud-cyan uppercase font-bold mr-1 flex items-center gap-1">
+                  <span>TEST VERBAL COMMS:</span>
+                </span>
                 {[
                   'Houston, Sol 142 habitation check complete.',
                   'Lead-II vector feeling tight, pacing respiration.',
-                  'ARES-V cockpit audio link verified, all systems green.',
+                  'Requesting Dr. BEKUR hypoxia assessment.',
+                  'EVA suit air scrubbers verified, all systems green.',
                 ].map((phrase, idx) => (
                   <button
                     key={idx}
                     onClick={() => {
                       cockpitAudio.playBlip();
-                      setLiveTranscript(`Pilot Worku (Local Radio): "${phrase}"`);
+                      setLiveTranscript(`Pilot Worku (Comms Stream): "${phrase}"`);
                     }}
                     className="text-[10px] px-2 py-0.5 rounded bg-space-950 border border-slate-700 text-slate-300 hover:text-hud-cyan hover:border-hud-cyan transition"
                   >
-                    "{phrase.slice(0, 22)}..."
+                    "{phrase.slice(0, 24)}..."
                   </button>
                 ))}
               </div>

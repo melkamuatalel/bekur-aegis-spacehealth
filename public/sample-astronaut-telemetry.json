@@ -1,0 +1,15 @@
+{
+  "mission": "ARES-V Mars Transit Sol 142",
+  "spacecraft": "Mars Transit Vehicle (MTV-1)",
+  "astronaut": "Abebe Worku",
+  "device": "NASA Bio-Harness Holter Monitor (BLE GATT 0x180D)",
+  "timestamp": "2026-11-13T18:45:00Z",
+  "bpm": 86,
+  "heartRate": 86,
+  "spo2": 98.6,
+  "bloodPressureSys": 126,
+  "bloodPressureDia": 82,
+  "sansScore": 48,
+  "radiationUsv": 64.2,
+  "clinicalNotes": "Ingested via BEKUR-Aegis smart file parser. Post-EVA telemetry nominal."
+}
