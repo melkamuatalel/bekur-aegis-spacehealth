@@ -68,6 +68,12 @@ We learned that microgravity pathophysiology is deeply interconnected: cephalad 
 ### 6. The Story of Team BEKUR & What We Are Most Proud Of
 Originating from Addis Ababa, Ethiopia, Team BEKUR set out to prove that world-class aerospace health intelligence can be built from Africa for humanity's greatest journey. We are most proud that BEKUR-Aegis is not a static mockup—it is a 100% functional, flight-ready software suite running real-time biometric DSP and AI inference that is equally capable of saving an astronaut en route to Mars or a patient in a remote rural clinic in Ethiopia.
 
+### 7. Future Roadmap & Ongoing Development (Advancing to TRL 8 & 9)
+BEKUR-Aegis is not a one-off hackathon sprint—it is an actively ongoing initiative:
+- Clinical Pilot Partnerships: Planning clinical validation trials in Ethiopian remote health outposts and academic medical centers to refine offline ECG/rPPG diagnostic accuracy under limited connectivity.
+- Radiation-Hardened Edge Hardware: Packaging the offline inference engine for spaceflight-grade embedded SoCs (NVIDIA Jetson Space / RISC-V avionics) for flight payload testing.
+- Expanded Bio-Imaging: Extending Dr. BEKUR-AI to process point-of-care ultrasound (POCUS) imaging and autonomous closed-loop medical device actuation.
+
 Open Source Repository: https://github.com/melkamuatalel/bekur-aegis-spacehealth
 Live Production Platform: https://bekur-aegis-spacehealth.vercel.app/
 ```
