@@ -412,8 +412,8 @@ export default function OpticalRPPGScannerModal({
     if (onApplyPulse) {
       onApplyPulse({
         bpm: opticalPulseBpm,
-        spo2: 98.4,
-        source: 'CONTACTLESS CAMERA rPPG (530nm Optical Spectrum)',
+        // Transparent scientific attribution: rPPG green channel estimates pulsatile heart rate
+        source: 'LIVE CONTACTLESS CAMERA rPPG (530nm Green Channel)',
       });
     }
     setIsSynced(true);

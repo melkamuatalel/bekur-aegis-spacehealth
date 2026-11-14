@@ -17,6 +17,8 @@ import AIDoctorModal from './components/AIDoctorModal';
 import NasaRiskDrawer from './components/NasaRiskDrawer';
 import OpticalRPPGScannerModal from './components/OpticalRPPGScannerModal';
 import GeneralMedicalDossierModal from './components/GeneralMedicalDossierModal';
+import ScientificValidationManualModal from './components/ScientificValidationManualModal';
+import JudgeGuidedTourModal from './components/JudgeGuidedTourModal';
 import { CREW_MEMBERS } from './data/nasaHealthData';
 import {
   ShieldAlert,
@@ -49,6 +51,8 @@ export default function App() {
   const [isPitchWalkthroughOpen, setIsPitchWalkthroughOpen] = useState(false);
   const [isRPPGOpen, setIsRPPGOpen] = useState(false);
   const [isMedicalDossierOpen, setIsMedicalDossierOpen] = useState(false);
+  const [isValidationManualOpen, setIsValidationManualOpen] = useState(false);
+  const [isGuidedTourOpen, setIsGuidedTourOpen] = useState(false);
 
   // Hash-based Full Page Router: Default to NASA Biometric Security Gate ('login') for authentic aerospace privacy
   const getInitialPage = () => {
@@ -139,6 +143,8 @@ export default function App() {
           onOpenPitchWalkthrough={() => setIsPitchWalkthroughOpen(true)}
           onOpenRPPG={() => setIsRPPGOpen(true)}
           onOpenMedicalDossier={() => setIsMedicalDossierOpen(true)}
+          onOpenValidationManual={() => setIsValidationManualOpen(true)}
+          onOpenGuidedTour={() => setIsGuidedTourOpen(true)}
         />
 
         {/* Emergency Alert Banner (visible when Anomaly is triggered) */}
@@ -440,6 +446,16 @@ export default function App() {
         crew={crew}
         activeCrew={activeCrew}
         isEmergencyActive={isAnomalyActive}
+      />
+      <ScientificValidationManualModal
+        isOpen={isValidationManualOpen}
+        onClose={() => setIsValidationManualOpen(false)}
+      />
+      <JudgeGuidedTourModal
+        isOpen={isGuidedTourOpen}
+        onClose={() => setIsGuidedTourOpen(false)}
+        onTriggerAnomaly={handleToggleAnomaly}
+        onOpenAIDoc={() => navigateTo('ai-doctor')}
       />
     </div>
   );

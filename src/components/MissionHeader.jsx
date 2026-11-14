@@ -13,6 +13,7 @@ import {
   Bluetooth,
   Database,
   Film,
+  Zap,
 } from 'lucide-react';
 import BekurLogo from './BekurLogo';
 import { MISSION_METADATA } from '../data/nasaHealthData';
@@ -27,6 +28,8 @@ export default function MissionHeader({
   onOpenPitchWalkthrough,
   onOpenRPPG,
   onOpenMedicalDossier,
+  onOpenValidationManual,
+  onOpenGuidedTour,
 }) {
   const [isMuted, setIsMuted] = useState(false);
   const [earthTime, setEarthTime] = useState(new Date().toUTCString());
@@ -58,17 +61,43 @@ export default function MissionHeader({
         <BekurLogo size="default" />
 
         {/* Tactical Cockpit Controls */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
+        <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+          {/* 1-Click Run Mission Demo / 60-Sec Judge Tour */}
+          <button
+            onClick={() => {
+              cockpitAudio.playBlip();
+              if (onOpenGuidedTour) onOpenGuidedTour();
+            }}
+            className="px-3.5 py-2.5 rounded-xl text-xs font-orbitron font-extrabold bg-gradient-to-r from-amber-400 via-amber-500 to-orange-500 hover:from-amber-300 hover:to-orange-400 text-space-950 flex items-center space-x-1.5 transition shadow-[0_0_20px_rgba(245,158,11,0.5)] animate-pulse"
+            title="Launch 60-Second Guided Tour for NASA Judges"
+          >
+            <Zap className="w-4 h-4 fill-current text-space-950" />
+            <span>RUN MISSION DEMO</span>
+          </button>
+
+          {/* Technical Manual & Validation Compendium */}
+          <button
+            onClick={() => {
+              cockpitAudio.playBlip();
+              if (onOpenValidationManual) onOpenValidationManual();
+            }}
+            className="px-3 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-space-950 hover:bg-space-900 text-slate-300 hover:text-white border border-slate-700 hover:border-hud-cyan/50 flex items-center space-x-1.5 transition"
+            title="Scientific Validation Study & Technical Compendium"
+          >
+            <BookOpen className="w-4 h-4 text-emerald-400" />
+            <span>MANUAL & EVIDENCE</span>
+          </button>
+
           {/* Automated 2-Minute Video Pitch Walkthrough Button */}
           <button
             onClick={() => {
               cockpitAudio.playBlip();
               onOpenPitchWalkthrough();
             }}
-            className="px-3.5 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white flex items-center space-x-2 transition shadow-[0_0_20px_rgba(168,85,247,0.4)]"
+            className="px-3 py-2.5 rounded-xl text-xs font-orbitron font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white flex items-center space-x-1.5 transition shadow-[0_0_20px_rgba(168,85,247,0.4)]"
           >
             <Film className="w-4 h-4 text-purple-200 animate-pulse" />
-            <span>2-MIN VIDEO PITCH</span>
+            <span>2-MIN VIDEO</span>
           </button>
 
           {/* Live Data & Hardware Integration Button */}
