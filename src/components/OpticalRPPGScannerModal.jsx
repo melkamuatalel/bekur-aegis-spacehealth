@@ -528,14 +528,14 @@ export default function OpticalRPPGScannerModal({
             {/* Heart Rate Card */}
             <div className="p-3.5 rounded-2xl bg-space-950 border border-slate-800 flex flex-col justify-between">
               <span className="text-[10px] text-slate-400 uppercase font-bold flex items-center justify-between">
-                <span>OPTICAL PULSE</span>
+                <span>CAMERA PULSE</span>
                 <Heart className={`w-3.5 h-3.5 ${!isFaceLocked ? 'text-slate-600' : 'text-hud-rose animate-pulse fill-current'}`} />
               </span>
               <div className={`font-orbitron font-extrabold text-2xl mt-1 ${!isFaceLocked ? 'text-slate-500' : 'text-hud-rose'}`}>
                 {isFaceLocked ? opticalPulseBpm : '--'} <span className="text-xs text-slate-400 font-normal">BPM</span>
               </div>
               <span className="text-[9px] text-slate-500">
-                {isOccluded ? 'Sensor Blocked' : isNoFace ? 'No Face In Frame' : 'Contactless Facial rPPG'}
+                {isOccluded ? 'Sensor Blocked' : isNoFace ? 'Signal Weak / Align Face' : 'Experimental rPPG (530nm)'}
               </span>
             </div>
 
@@ -561,29 +561,14 @@ export default function OpticalRPPGScannerModal({
               </span>
             </div>
 
-            {/* NASA Standard Clearance */}
+            {/* Cabin SpO2 Baseline Card (Scientific Honesty) */}
             <div className="p-3.5 rounded-2xl bg-space-950 border border-slate-800 flex flex-col justify-between">
-              <span className="text-[10px] text-slate-400 uppercase font-bold">NASA-STD-3001</span>
-              <div className="font-orbitron font-bold text-sm text-white mt-1 flex items-center gap-1.5">
-                {isOccluded ? (
-                  <>
-                    <AlertTriangle className="w-4 h-4 text-hud-rose" />
-                    <span className="text-hud-rose text-xs">OCCLUSION FAULT</span>
-                  </>
-                ) : isNoFace ? (
-                  <>
-                    <Scan className="w-4 h-4 text-amber-400 animate-pulse" />
-                    <span className="text-amber-400 text-xs">STANDBY</span>
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    <span>FLIGHT READY</span>
-                  </>
-                )}
+              <span className="text-[10px] text-slate-400 uppercase font-bold">SIMULATED SpO2</span>
+              <div className="font-orbitron font-extrabold text-2xl mt-1 text-slate-200">
+                98.4 <span className="text-xs text-slate-400 font-normal">%</span>
               </div>
               <span className="text-[9px] text-slate-500">
-                {isOccluded ? 'Awaiting Face Exposure' : isNoFace ? 'Align Astronaut Face' : 'Passive Habit. Scan'}
+                Cabin Avionics Baseline (Dual-λ Required)
               </span>
             </div>
           </div>
